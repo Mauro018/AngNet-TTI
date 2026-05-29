@@ -1,0 +1,35 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SistemaPublicidad", "SistemaPublicidad", "{72CCF6D1-B86F-CEB0-3F81-B5A78CE723A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Net.Backend", "SistemaPublicidad\Net.Backend\Net.Backend.csproj", "{952F6124-9499-AD81-1EF2-A8328922214D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Ang.Frontend", "Ang.Frontend", "{7B7E5CC8-910F-6CB6-8FDB-61BB33F797C7}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend", "backend", "{CCC146CE-463C-7928-7BD7-7C0C9C826C07}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{952F6124-9499-AD81-1EF2-A8328922214D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{952F6124-9499-AD81-1EF2-A8328922214D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{952F6124-9499-AD81-1EF2-A8328922214D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{952F6124-9499-AD81-1EF2-A8328922214D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{952F6124-9499-AD81-1EF2-A8328922214D} = {72CCF6D1-B86F-CEB0-3F81-B5A78CE723A6}
+		{7B7E5CC8-910F-6CB6-8FDB-61BB33F797C7} = {72CCF6D1-B86F-CEB0-3F81-B5A78CE723A6}
+		{CCC146CE-463C-7928-7BD7-7C0C9C826C07} = {7B7E5CC8-910F-6CB6-8FDB-61BB33F797C7}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {21F92BAB-103C-480B-A163-0EE94A3D2C89}
+	EndGlobalSection
+EndGlobal

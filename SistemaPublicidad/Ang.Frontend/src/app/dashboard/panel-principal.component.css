@@ -1,0 +1,162 @@
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.dashboard-shell {
+  display: grid;
+  grid-template-columns: 1fr;
+  min-height: auto;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.workspace {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.home-view {
+  gap: 1rem;
+}
+
+.companies-view {
+  gap: 1.5rem;
+}
+
+.section-header {
+  display: grid;
+  gap: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(15, 122, 74, 0.1);
+}
+
+.section-header h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.section-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.companies-layout {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.publicities-view {
+  gap: 1.5rem;
+}
+
+.publicities-layout {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.home-summary {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.home-summary__intro {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.home-summary__eyebrow,
+.placeholder-card__eyebrow {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.home-summary__intro h2,
+.placeholder-card h2 {
+  margin: 0;
+  color: var(--text);
+}
+
+.home-summary__intro p,
+.placeholder-card p,
+.dashboard-footer p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.dashboard-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 1rem;
+  background: var(--surface-muted);
+  border: 1px solid var(--border);
+}
+
+.dashboard-footer__tag {
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: var(--primary);
+  color: white;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.workspace--placeholder {
+  min-height: 240px;
+}
+
+.placeholder-card {
+  display: grid;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  border-radius: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr);
+  gap: 1rem;
+}
+
+@media (max-width: 1200px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .dashboard-shell {
+    padding: 1rem;
+  }
+
+  .dashboard-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .section-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .section-header p {
+    font-size: 0.9rem;
+  }
+}
+

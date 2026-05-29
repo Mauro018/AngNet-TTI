@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+:root,
+html[data-theme='light'] {
+	color-scheme: light;
+	--bg: #f4fbf6;
+	--bg-accent: #dff4e7;
+	--surface: rgba(255, 255, 255, 0.9);
+	--surface-strong: #ffffff;
+	--surface-muted: #eef8f2;
+	--border: rgba(15, 122, 74, 0.12);
+	--text: #0b3f28;
+	--muted: #5a7065;
+	--primary: #0f7a4a;
+	--primary-strong: #0a5b37;
+	--primary-soft: #d9f2e5;
+	--success: #1d9a5a;
+	--warning: #bf8a16;
+	--danger: #e62f22;
+	--shadow: 0 24px 80px rgba(12, 53, 30, 0.12);
+}
+
+html[data-theme='dark'] {
+	color-scheme: dark;
+	--bg: #0d1210;
+	--bg-accent: #15291f;
+	--surface: rgba(35, 72, 58, 0.9);
+	--surface-strong: #266348;
+	--surface-muted: #132b20;
+	--border: rgba(166, 202, 182, 0.14);
+	--text: #9fe2b5;
+	--muted: #a7b7ae;
+	--primary: #1c7d44;
+	--primary-strong: #3fb06f;
+	--primary-soft: rgba(95, 201, 140, 0.12);
+	--success: #56d38a;
+	--warning: #efb84d;
+	--danger: #fe1717;
+	--shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+
+  input::placeholder {
+  color: #7be170;
+  opacity: 55%;
+}
+}
+
+html,
+body {
+	min-height: 100%;
+}
+
+body {
+	margin: 0;
+	font-family: 'Manrope', 'Segoe UI', sans-serif;
+	background:
+		radial-gradient(circle at top left, rgba(15, 122, 74, 0.18), transparent 34%),
+		radial-gradient(circle at top right, rgba(186, 232, 205, 0.56), transparent 28%),
+		linear-gradient(180deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 88%, var(--bg-accent)) 48%, var(--bg-accent) 100%);
+	color: var(--text);
+	transition: background 0.25s ease, color 0.25s ease;
+  padding:4px;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+	font: inherit;
+}

@@ -1,0 +1,19 @@
+<section class="status-strip" aria-label="Resumen operativo">
+  @for (card of statusCards; track card.label) {
+    <article class="status-card">
+      <span class="status-card__label">{{ card.label }}</span>
+      <strong>{{ card.value }}</strong>
+      <p>{{ card.description }}</p>
+    </article>
+  }
+</section>
+
+<section class="metrics-grid" aria-label="Indicadores principales">
+  @for (metric of metricCards; track metric.label) {
+    <article [class]="toneClass(metric.tone)">
+      <span class="metric-card__label">{{ metric.label }}</span>
+      <strong class="metric-card__value">{{ metric.value }}</strong>
+      <p class="metric-card__note">{{ metric.note }}</p>
+    </article>
+  }
+</section>

@@ -1,0 +1,71 @@
+<nav class="navbar">
+  <div class="navbar__container">
+    <div class="navbar__brand">
+      <h1 class="navbar__title">{{ brandName }}</h1>
+      <p class="navbar__subtitle">Centro de control de publicidad</p>
+    </div>
+
+    <ul class="navbar__menu">
+      <li class="navbar__menu-item">
+        <button
+          class="navbar__button navbar__theme-button"
+          (click)="toggleTema()"
+          title="Cambiar tema"
+        >
+          {{ temaLabel }}
+        </button>
+      </li>
+      <li class="navbar__menu-item">
+        <button
+          class="navbar__button"
+          [class.navbar__button--active]="activeSection === 'Inicio'"
+          (click)="selectSection('Inicio')"
+        >
+          Inicio
+        </button>
+      </li>
+      <li class="navbar__menu-item">
+        <button
+          class="navbar__button"
+          [class.navbar__button--active]="activeSection === 'Empresas'"
+          (click)="selectSection('Empresas')"
+        >
+          Empresas
+        </button>
+      </li>
+      <li class="navbar__menu-item">
+        <button
+          class="navbar__button"
+          [class.navbar__button--active]="activeSection === 'Publicidades'"
+          (click)="selectSection('Publicidades')"
+        >
+          Publicidades
+          <span
+            *ngIf="sections.find(s => s.id === 'Publicidades')?.alert"
+            class="navbar__alert"
+            [class]="getAlertClass(sections.find(s => s.id === 'Publicidades')?.alert)"
+          ></span>
+        </button>
+      </li>
+    </ul>
+
+  </div>
+
+  <div class="navbar__alerts" *ngIf="sections.some(s => s.alert)">
+    <div class="navbar__alerts-label">⚠️ Alertas:</div>
+    <div class="navbar__alerts-list">
+      <ng-container *ngFor="let section of sections">
+        <span
+          *ngIf="section.alert"
+          class="navbar__alert-badge"
+          [class.navbar__alert-badge--danger]="section.alert === 'danger'"
+          [class.navbar__alert-badge--warning]="section.alert === 'warning'"
+        >
+          {{ section.label }}
+          <span *ngIf="section.alert === 'danger'" class="navbar__alert-badge-text">(< 3 días)</span>
+          <span *ngIf="section.alert === 'warning'" class="navbar__alert-badge-text">(< 7 días)</span>
+        </span>
+      </ng-container>
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,51 @@
+<section class="publicity-list-container">
+  <header class="list-header">
+    <h3>Publicidades registradas</h3>
+    <span class="list-count">{{ publicidades.length }} publicidad{{ publicidades.length !== 1 ? 'es' : '' }}</span>
+  </header>
+
+  <div class="list-wrapper">
+    <div class="publicities-table">
+      <div class="table-header">
+        <div class="table-cell table-cell--company">Empresa</div>
+        <div class="table-cell table-cell--name">Publicidad</div>
+        <div class="table-cell table-cell--duration">Video / Meses</div>
+        <div class="table-cell table-cell--start">Inicio</div>
+        <div class="table-cell table-cell--end">Fin</div>
+        <div class="table-cell table-cell--days">Días restantes</div>
+        <div class="table-cell table-cell--status">Estado</div>
+      </div>
+
+      <div *ngIf="publicidades.length === 0" class="empty-state">
+        <p>No hay publicidades registradas aún.</p>
+        <span>Usa el formulario para agregar la primera publicidad.</span>
+      </div>
+
+      <div *ngFor="let publicidad of publicidades" class="table-row">
+        <div class="table-cell table-cell--company">
+          <strong>{{ publicidad.empresaNombre }}</strong>
+        </div>
+        <div class="table-cell table-cell--name">
+          {{ publicidad.nombrePublicidad }}
+        </div>
+        <div class="table-cell table-cell--duration">
+          {{ publicidad.duracionVideoSegundos }} s / {{ publicidad.duracionMeses }} mes{{ publicidad.duracionMeses === 1 ? '' : 'es' }}
+        </div>
+        <div class="table-cell table-cell--start">
+          {{ formatDate(publicidad.fechaInicio) }}
+        </div>
+        <div class="table-cell table-cell--end">
+          {{ formatDate(publicidad.fechaFin) }}
+        </div>
+        <div class="table-cell table-cell--days">
+          {{ getDaysRemaining(publicidad.fechaFin) }} días
+        </div>
+        <div class="table-cell table-cell--status">
+          <span [class]="getStatusClass(publicidad)">
+            {{ getStatusLabel(publicidad) }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

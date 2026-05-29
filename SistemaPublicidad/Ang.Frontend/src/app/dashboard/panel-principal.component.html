@@ -1,0 +1,59 @@
+<app-navbar
+  [activeSection]="seccionActiva()"
+  [sections]="seccionesNavegacion()"
+  (sectionSelected)="establecerSeccionActiva($event)"
+></app-navbar>
+
+<main class="dashboard-shell">
+  @if (seccionActiva() === 'Inicio') {
+    <section class="workspace home-view">
+      <section class="home-summary" aria-label="Resumen">
+        <div class="home-summary__intro">
+          <span class="home-summary__eyebrow"><app-heroe [todayLabel]="todayLabel"></app-heroe></span>
+          <app-resumen
+          [statusCards]="tarjetasEstadoInicio"
+          [metricCards]="tarjetasMetricasInicio"
+          />
+        </div>
+      </section>
+    </section>
+  } @else if (seccionActiva() === 'Empresas') {
+    <section class="workspace companies-view">
+      <header class="section-header">
+        <h2>Gestión de empresas</h2>
+        <p>Registra nuevas empresas y visualiza el listado completo de todas las empresas asociadas al sistema.</p>
+      </header>
+
+      <div class="companies-layout">
+        <app-formulario-empresa #empresaForm (empresaAgregada)="agregarEmpresa($event, empresaForm)" />
+        <app-lista-empresas [empresas]="empresasRegistradas()" />
+      </div>
+    </section>
+  } @else if (seccionActiva() === 'Publicidades') {
+    <section class="workspace publicities-view">
+      <header class="section-header">
+        <h2>Gestión de publicidades</h2>
+        <p>Selecciona una empresa, crea una nueva publicidad y revisa sus fechas de inicio y finalización.</p>
+      </header>
+
+      <div class="publicities-layout">
+        <app-formulario-publicidad
+          #publicidadForm
+          [empresas]="empresasRegistradas()"
+          (publicidadAgregada)="agregarPublicidad($event, publicidadForm)"
+        />
+        <app-lista-publicidades [publicidades]="publicidadesRegistradas()" />
+      </div>
+    </section>
+  } @else {
+    <section class="workspace workspace--placeholder">
+      <div class="placeholder-card">
+        <span class="placeholder-card__eyebrow">{{ getActiveSectionLabel() }}</span>
+        <h2>Sección en construcción</h2>
+        <p>
+          Por ahora el inicio está simplificado. Más adelante agregaremos aquí otras secciones del sistema.
+        </p>
+      </div>
+    </section>
+  }
+</main>

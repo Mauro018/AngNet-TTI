@@ -1,0 +1,55 @@
+<section class="company-list-container">
+  <header class="list-header">
+    <h3>Empresas registradas</h3>
+    <span class="list-count">{{ empresas.length }} empresa{{ empresas.length !== 1 ? 's' : '' }}</span>
+  </header>
+
+  <div class="list-wrapper">
+    <div class="companies-table">
+      <div class="table-header">
+        <div class="table-cell table-cell--name">Nombre</div>
+        <div class="table-cell table-cell--nit">NIT</div>
+        <div class="table-cell table-cell--sectorIndustria">Sector</div>
+        <div class="table-cell table-cell--contact">Contacto</div>
+        <div class="table-cell table-cell--email">Email</div>
+        <div class="table-cell table-cell--phone">Teléfono</div>
+        <div class="table-cell table-cell--status">Estado</div>
+        <div class="table-cell table-cell--date">Registrado</div>
+      </div>
+
+      <div *ngIf="empresas.length === 0" class="empty-state">
+        <p>No hay empresas registradas aún.</p>
+        <span>Usa el formulario anterior para crear la primera empresa.</span>
+      </div>
+
+      <div *ngFor="let company of empresas" class="table-row">
+        <div class="table-cell table-cell--name">
+          <strong>{{ company.nombre }}</strong>
+        </div>
+        <div class="table-cell table-cell--nit">
+          {{ company.nit }}
+        </div>
+        <div class="table-cell table-cell--sectorIndustria">
+          {{ company.sectorIndustria }}
+        </div>
+        <div class="table-cell table-cell--contact">
+          {{ company.contacto }}
+        </div>
+        <div class="table-cell table-cell--email">
+          <a [href]="'mailto:' + company.correo" class="email-link">{{ company.correo }}</a>
+        </div>
+        <div class="table-cell table-cell--phone">
+          <a [href]="'tel:' + company.telefono" class="phone-link">{{ company.telefono }}</a>
+        </div>
+        <div class="table-cell table-cell--status">
+          <span [class]="getStatusClass(company.estado)">
+            {{ getStatusLabel(company.estado) }}
+          </span>
+        </div>
+        <div class="table-cell table-cell--date">
+          {{ formatDate(company.fechaRegistro) }}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

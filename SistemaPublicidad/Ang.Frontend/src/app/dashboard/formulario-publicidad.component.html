@@ -1,0 +1,162 @@
+<section class="publicity-form-container">
+  <header class="form-header">
+    <h3>Nueva publicidad</h3>
+    <p>Selecciona una empresa y define las fechas de vigencia de la publicidad.</p>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" class="publicity-form">
+    <!-- Hidden reference to directive so static analyzer recognizes usage -->
+    <span *ngIf="false" appInputFilter="alpha"></span>
+    <div class="form-row">
+      <div class="form-group form-group--full">
+        <label for="empresaId">Empresa *</label>
+        <select
+          id="empresaId"
+          formControlName="empresaId"
+          [class.form-group__input--error]="isInvalid('empresaId')"
+        >
+          <option [ngValue]="0" disabled>Selecciona una empresa</option>
+          @for (company of empresas(); track company.id) {
+            <option [ngValue]="company.id">{{ company.nombre }}</option>
+          }
+        </select>
+        <span class="form-group__error" *ngIf="isInvalid('empresaId')">
+          {{ getErrorMessage('empresaId') }}
+        </span>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="nombrePublicidad">Nombre de la publicidad *</label>
+        <input
+          id="nombrePublicidad"
+          type="text"
+          formControlName="nombrePublicidad"
+          appInputFilter="alphanumeric"
+          [uppercase]="true"
+          placeholder="Ej. Promoción de temporada"
+          [class.form-group__input--error]="isInvalid('nombrePublicidad')"
+        />
+        <span class="form-group__error" *ngIf="isInvalid('nombrePublicidad')">
+          {{ getErrorMessage('nombrePublicidad') }}
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label for="tipoPantalla">Pantalla *</label>
+        <select
+          id="tipoPantalla"
+          formControlName="tipoPantalla"
+          [class.form-group__input--error]="isInvalid('tipoPantalla')"
+        >
+          @for (opt of tipoPantallaOptions; track opt.value) {
+            <option [ngValue]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
+        <span class="form-group__error" *ngIf="isInvalid('tipoPantalla')">
+          {{ getErrorMessage('tipoPantalla') }}
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label for="duracionVideoSegundos">Duración de video *</label>
+        <select
+          id="duracionVideoSegundos"
+          formControlName="duracionVideoSegundos"
+          [class.form-group__input--error]="isInvalid('duracionVideoSegundos')"
+        >
+          @for (duration of duracionVideoOptions; track duration) {
+            <option [ngValue]="duration">{{ duration }} segundos</option>
+          }
+        </select>
+        <span class="form-group__error" *ngIf="isInvalid('duracionVideoSegundos')">
+          {{ getErrorMessage('duracionVideoSegundos') }}
+        </span>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="duracionMeses">Cantidad de tiempo *</label>
+        <select
+          id="duracionMeses"
+          formControlName="duracionMeses"
+          (change)="syncDates()"
+          [class.form-group__input--error]="isInvalid('duracionMeses')"
+        >
+          @for (month of duracionMesesOptions; track month) {
+            <option [ngValue]="month">{{ month }} mes{{ month === 1 ? '' : 'es' }}</option>
+          }
+        </select>
+        <span class="form-group__error" *ngIf="isInvalid('duracionMeses')">
+          {{ getErrorMessage('duracionMeses') }}
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label for="fechaInicio">Fecha de inicio *</label>
+        <input
+          id="fechaInicio"
+          type="date"
+          formControlName="fechaInicio"
+          (change)="syncDates()"
+          [class.form-group__input--error]="isInvalid('fechaInicio')"
+        />
+        <span class="form-group__error" *ngIf="isInvalid('fechaInicio')">
+          {{ getErrorMessage('fechaInicio') }}
+        </span>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="fechaFin">Fecha de finalización *</label>
+        <input
+          id="fechaFin"
+          type="date"
+          formControlName="fechaFin"
+          readonly
+          [class.form-group__input--error]="isInvalid('fechaFin')"
+        />
+        <span class="form-group__error" *ngIf="isInvalid('fechaFin')">
+          {{ getErrorMessage('fechaFin') }}
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label for="observaciones">Observaciones</label>
+        <input
+          id="observaciones"
+          type="text"
+          formControlName="observaciones"
+          appInputFilter="alphanumeric"
+          [uppercase]="true"
+          placeholder="Detalles adicionales o notas internas"
+        />
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="button button--primary" [disabled]="form.invalid">
+        Registrar publicidad
+      </button>
+      <button type="button" class="button button--secondary" (click)="clear()">
+        Limpiar formulario
+      </button>
+    </div>
+
+    <div class="price-preview" aria-live="polite">
+      <p><strong>Precio base mensual:</strong>
+        {{ formatCurrency(getPrecioBase(form.controls.tipoPantalla.value, form.controls.duracionVideoSegundos.value)) }}
+      </p>
+      <p><strong>Precio total ({{ form.controls.duracionMeses.value }} meses):</strong>
+        {{ formatCurrency(getPrecioSeleccionado()) }}
+      </p>
+    </div>
+
+    <span class="form-note" *ngIf="form.invalid && form.touched">
+      Verifica la empresa y las fechas antes de guardar.
+    </span>
+  </form>
+</section>
