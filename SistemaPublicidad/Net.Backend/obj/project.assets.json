@@ -3279,11 +3279,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/asistensistemas/Documentos/Angular/SistemaPublicidad/Net.Backend/Net.Backend.csproj",
+      "projectUniqueName": "/home/asistensistemas/Documentos/AngNet-TTI/SistemaPublicidad/Net.Backend/Net.Backend.csproj",
       "projectName": "Net.Backend",
-      "projectPath": "/home/asistensistemas/Documentos/Angular/SistemaPublicidad/Net.Backend/Net.Backend.csproj",
+      "projectPath": "/home/asistensistemas/Documentos/AngNet-TTI/SistemaPublicidad/Net.Backend/Net.Backend.csproj",
       "packagesPath": "/home/asistensistemas/.nuget/packages/",
-      "outputPath": "/home/asistensistemas/Documentos/Angular/SistemaPublicidad/Net.Backend/obj/",
+      "outputPath": "/home/asistensistemas/Documentos/AngNet-TTI/SistemaPublicidad/Net.Backend/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/asistensistemas/.nuget/NuGet/NuGet.Config"

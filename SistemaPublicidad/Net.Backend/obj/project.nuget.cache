@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "NHDQF3umD1U=",
+  "dgSpecHash": "hXz8cD3fkjQ=",
   "success": true,
-  "projectFilePath": "/home/asistensistemas/Documentos/Angular/SistemaPublicidad/Net.Backend/Net.Backend.csproj",
+  "projectFilePath": "/home/asistensistemas/Documentos/AngNet-TTI/SistemaPublicidad/Net.Backend/Net.Backend.csproj",
   "expectedPackageFiles": [
     "/home/asistensistemas/.nuget/packages/humanizer.core/2.14.1/humanizer.core.2.14.1.nupkg.sha512",
     "/home/asistensistemas/.nuget/packages/microsoft.aspnetcore.openapi/9.0.15/microsoft.aspnetcore.openapi.9.0.15.nupkg.sha512",
