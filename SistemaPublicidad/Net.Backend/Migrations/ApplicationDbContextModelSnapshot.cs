@@ -3,8 +3,8 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using Net.Backend.Data;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using SistemaPublicidad.Net.Backend.Data;
 
 #nullable disable
 
@@ -61,16 +61,10 @@ namespace Net.Backend.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<bool>("Pendiente")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("SectorIndustria")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
-
-                    b.Property<bool>("Suspendido")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("Telefono")
                         .IsRequired()
@@ -78,6 +72,12 @@ namespace Net.Backend.Migrations
                         .HasColumnType("character varying(20)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Nit")
+                        .IsUnique();
+
+                    b.HasIndex("Telefono")
+                        .IsUnique();
 
                     b.ToTable("Empresas");
                 });
@@ -155,6 +155,9 @@ namespace Net.Backend.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("EmpresaId");
+
+                    b.HasIndex("NombrePublicidad")
+                        .IsUnique();
 
                     b.ToTable("Publicidades");
                 });

@@ -115,12 +115,7 @@
   color: var(--success);
 }
 
-.status-badge--pendiente {
-  background: color-mix(in srgb, var(--surface-strong) 80%, var(--warning));
-  color: var(--warning);
-}
-
-.status-badge--suspendida {
+.status-badge--inactiva {
   background: color-mix(in srgb, var(--surface-strong) 80%, var(--danger));
   color: var(--danger);
 }

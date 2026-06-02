@@ -1,6 +1,6 @@
 namespace SistemaPublicidad.Net.Backend.Dtos
 {
-    public class PublicidadResponse
+    public class PublicidadRespuesta
     {
         public int Id { get; set; }
         public int EmpresaId { get; set; }

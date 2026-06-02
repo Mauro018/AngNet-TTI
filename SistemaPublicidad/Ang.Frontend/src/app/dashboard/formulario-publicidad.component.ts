@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, EventEmitter, Output, inject, input } from '@angular/core';
+import { Component, DestroyRef, EventEmitter, Input, Output, inject, input } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -69,6 +69,7 @@ export class FormularioPublicidadComponent {
   ];
 
   readonly empresas = input<Empresa[]>([]);
+  @Input() errorMessage = '';
   @Output() publicidadAgregada = new EventEmitter<NuevaPublicidadEntrada>();
 
   // Formulario reactivo de alta de publicidades con validación de fechas.

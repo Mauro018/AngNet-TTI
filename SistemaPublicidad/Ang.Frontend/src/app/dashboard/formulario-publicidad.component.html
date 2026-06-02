@@ -146,6 +146,8 @@
       </button>
     </div>
 
+    <span class="form-note form-note--error" *ngIf="errorMessage">{{ errorMessage }}</span>
+
     <div class="price-preview" aria-live="polite">
       <p><strong>Precio base mensual:</strong>
         {{ formatCurrency(getPrecioBase(form.controls.tipoPantalla.value, form.controls.duracionVideoSegundos.value)) }}

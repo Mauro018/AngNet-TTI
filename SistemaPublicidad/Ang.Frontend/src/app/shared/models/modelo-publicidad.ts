@@ -5,7 +5,7 @@ export type EstadoPublicidad = 'Programada' | 'Activa' | 'Pausada' | 'Finalizada
 
 export type SeveridadActividad = 'success' | 'warning' | 'info';
 
-export type EstadoEmpresa = 'Activa' | 'Pendiente' | 'Suspendida';
+export type EstadoEmpresa = 'Activa' | 'Inactiva';
 
 export type TipoPantallaPublicidad = 'VerticalSamsung' | 'HorizontalDescenso';
 

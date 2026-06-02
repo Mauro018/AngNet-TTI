@@ -33,6 +33,8 @@ export class PanelPrincipalComponent implements OnInit {
   // Estado reactivo cargado desde la API para que los formularios persistan realmente en la base de datos.
   protected empresasRegistradas = signal<Empresa[]>([]);
   protected publicidadesRegistradas = signal<Publicidad[]>([]);
+  protected empresaErrorMessage = signal('');
+  protected publicidadErrorMessage = signal('');
 
   protected readonly todayLabel = new Intl.DateTimeFormat('es-CO', {
     weekday: 'long',
@@ -178,12 +180,16 @@ export class PanelPrincipalComponent implements OnInit {
   // Inserta una nueva empresa al inicio de la lista para verla de inmediato.
   // El nuevo id se calcula a partir del valor más alto actual para evitar colisiones.
   protected agregarEmpresa(empresa: Omit<Empresa, 'id'>, formulario: FormularioEmpresaComponent): void {
+    this.empresaErrorMessage.set('');
     this.empresaService.crearEmpresa(empresa).subscribe({
       next: () => {
         formulario.clear();
+        this.empresaErrorMessage.set('');
         this.cargarEmpresas();
       },
       error: (error) => {
+        const mensaje = error?.error?.mensaje ?? 'No fue posible guardar la empresa.';
+        this.empresaErrorMessage.set(mensaje);
         console.error('No fue posible guardar la empresa.', error);
       },
     });
@@ -198,12 +204,17 @@ export class PanelPrincipalComponent implements OnInit {
       return;
     }
 
+    this.publicidadErrorMessage.set('');
     this.publicidadService.crearPublicidad(entrada).subscribe({
       next: () => {
         formulario.clear();
+        this.publicidadErrorMessage.set('');
         this.cargarPublicidades();
+        this.cargarEmpresas();
       },
       error: (error) => {
+        const mensaje = error?.error?.mensaje ?? 'No fue posible guardar la publicidad.';
+        this.publicidadErrorMessage.set(mensaje);
         console.error('No fue posible guardar la publicidad.', error);
       },
     });

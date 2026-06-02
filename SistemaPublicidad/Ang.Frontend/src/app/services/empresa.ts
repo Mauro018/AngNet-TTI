@@ -14,8 +14,6 @@ interface EmpresaApi {
   email: string;
   direccion: string;
   activo: boolean;
-  pendiente: boolean;
-  suspendido: boolean;
   fechaCreacion: string;
 }
 
@@ -50,7 +48,7 @@ export class EmpresaService {
       telefono: empresa.telefono,
       correo: empresa.email,
       direccion: empresa.direccion,
-      estado: empresa.suspendido ? 'Suspendida' : empresa.activo ? 'Activa' : 'Pendiente',
+        estado: empresa.activo ? 'Activa' : 'Inactiva',
       fechaRegistro: new Date(empresa.fechaCreacion).toISOString().slice(0, 10),
     };
   }
@@ -65,8 +63,6 @@ export class EmpresaService {
       email: empresa.correo.trim(),
       direccion: empresa.direccion.trim(),
       activo: empresa.estado === 'Activa',
-      pendiente: empresa.estado === 'Pendiente',
-      suspendido: empresa.estado === 'Suspendida',
       fechaCreacion: new Date().toISOString(),
     };
   }

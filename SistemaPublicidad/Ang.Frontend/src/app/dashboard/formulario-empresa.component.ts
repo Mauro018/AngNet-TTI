@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Empresa } from '../shared/models/modelo-publicidad';
@@ -14,6 +14,8 @@ import { InputFilterDirective } from '../shared/directives/input-filter.directiv
 export class FormularioEmpresaComponent {
   private readonly formBuilder = inject(FormBuilder);
 
+  @Input() errorMessage = '';
+
   @Output() empresaAgregada = new EventEmitter<Omit<Empresa, 'id'>>();
 
   // Formulario reactivo con validaciones mínimas para guardar datos consistentes.
@@ -25,7 +27,7 @@ export class FormularioEmpresaComponent {
     telefono: ['', [Validators.required, Validators.pattern(/^\d{7,}$/)]],
     correo: ['', [Validators.required, Validators.email]],
     direccion: ['', [Validators.required, Validators.minLength(5)]],
-    estado: ['Pendiente', Validators.required],
+    estado: ['Activa', Validators.required],
   });
 
   // Valida el formulario, normaliza la información y emite la nueva empresa.
@@ -44,7 +46,7 @@ export class FormularioEmpresaComponent {
       telefono: value.telefono.trim(),
       correo: value.correo.trim(),
       direccion: value.direccion.trim(),
-      estado: value.estado as 'Activa' | 'Pendiente' | 'Suspendida',
+      estado: value.estado as 'Activa' | 'Inactiva',
       fechaRegistro: new Date().toISOString().slice(0, 10),
     });
   }
@@ -59,7 +61,7 @@ export class FormularioEmpresaComponent {
       telefono: '',
       correo: '',
       direccion: '',
-      estado: 'Pendiente',
+      estado: 'Activa',
     });
   }
 

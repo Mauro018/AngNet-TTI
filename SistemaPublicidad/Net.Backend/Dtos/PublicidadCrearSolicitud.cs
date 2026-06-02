@@ -1,6 +1,6 @@
 namespace SistemaPublicidad.Net.Backend.Dtos
 {
-    public class PublicidadCreateRequest
+    public class PublicidadCrearSolicitud
     {
         public int EmpresaId { get; set; }
         public string NombrePublicidad { get; set; } = string.Empty;

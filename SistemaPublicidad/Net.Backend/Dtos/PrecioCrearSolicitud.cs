@@ -1,6 +1,6 @@
 namespace SistemaPublicidad.Net.Backend.Dtos
 {
-    public class PrecioCreateRequest
+    public class PrecioCrearSolicitud
     {
         public string TipoPantalla { get; set; } = string.Empty;
         public int DuracionSegundos { get; set; }

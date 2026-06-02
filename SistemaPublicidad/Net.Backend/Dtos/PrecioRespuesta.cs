@@ -1,6 +1,8 @@
+using System;
+
 namespace SistemaPublicidad.Net.Backend.Dtos
 {
-    public class PrecioResponse
+    public class PrecioRespuesta
     {
         public int Id { get; set; }
         public string TipoPantalla { get; set; } = string.Empty;

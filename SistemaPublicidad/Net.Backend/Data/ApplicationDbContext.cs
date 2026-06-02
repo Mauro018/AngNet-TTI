@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SistemaPublicidad.Net.Backend.Models;
 
-namespace Net.Backend.Data
+namespace SistemaPublicidad.Net.Backend.Data
 {
     public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
     {
@@ -19,6 +19,18 @@ namespace Net.Backend.Data
                 .WithMany(e => e.Publicidades)
                 .HasForeignKey(p => p.EmpresaId)
                 .OnDelete(DeleteBehavior.Cascade);// Eliminar una empresa eliminará sus publicidades asociadas
+
+            modelBuilder.Entity<Empresa>()
+                .HasIndex(e => e.Nit)
+                .IsUnique();
+
+            modelBuilder.Entity<Empresa>()
+                .HasIndex(e => e.Telefono)
+                .IsUnique();
+
+            modelBuilder.Entity<Publicidad>()
+                .HasIndex(p => p.NombrePublicidad)
+                .IsUnique();
 
             // Índice simple para consultas por tipo y duración
             modelBuilder.Entity<Precio>()

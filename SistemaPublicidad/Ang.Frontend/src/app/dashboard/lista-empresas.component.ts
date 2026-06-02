@@ -24,8 +24,7 @@ export class ListaEmpresasComponent {
   protected getStatusLabel(status: string): string {
     const labels: { [key: string]: string } = {
       Activa: '✓ Activa',
-      Pendiente: '⋮ Pendiente',
-      Suspendida: '✕ Suspendida',
+      Inactiva: '✕ Inactiva',
     };
     return labels[status] || status;
   }

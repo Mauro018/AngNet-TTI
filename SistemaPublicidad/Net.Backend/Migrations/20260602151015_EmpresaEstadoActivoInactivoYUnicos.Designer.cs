@@ -4,16 +4,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using SistemaPublicidad.Net.Backend.Data;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+using SistemaPublicidad.Net.Backend.Data;
 
 #nullable disable
 
 namespace Net.Backend.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260529192153_AddPrecios")]
-    partial class AddPrecios
+    [Migration("20260602151015_EmpresaEstadoActivoInactivoYUnicos")]
+    partial class EmpresaEstadoActivoInactivoYUnicos
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -64,16 +64,10 @@ namespace Net.Backend.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<bool>("Pendiente")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("SectorIndustria")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
-
-                    b.Property<bool>("Suspendido")
-                        .HasColumnType("boolean");
 
                     b.Property<string>("Telefono")
                         .IsRequired()
@@ -81,6 +75,12 @@ namespace Net.Backend.Migrations
                         .HasColumnType("character varying(20)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Nit")
+                        .IsUnique();
+
+                    b.HasIndex("Telefono")
+                        .IsUnique();
 
                     b.ToTable("Empresas");
                 });

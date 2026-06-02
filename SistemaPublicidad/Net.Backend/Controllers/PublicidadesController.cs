@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Net.Backend.Data;
+using SistemaPublicidad.Net.Backend.Data;
 using SistemaPublicidad.Net.Backend.Dtos;
 using SistemaPublicidad.Net.Backend.Models;
 
@@ -24,7 +24,7 @@ public class PublicidadesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<PublicidadResponse>>> GetPublicidades()
+    public async Task<ActionResult<IEnumerable<PublicidadRespuesta>>> GetPublicidades()
     {
         var publicidades = await _context.Publicidades
             .AsNoTracking()
@@ -37,7 +37,7 @@ public class PublicidadesController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<PublicidadResponse>> GetPublicidad(int id)
+    public async Task<ActionResult<PublicidadRespuesta>> GetPublicidad(int id)
     {
         var publicidad = await _context.Publicidades
             .AsNoTracking()
@@ -55,13 +55,25 @@ public class PublicidadesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<PublicidadResponse>> PostPublicidad([FromBody] PublicidadCreateRequest request)
+    public async Task<ActionResult<PublicidadRespuesta>> PostPublicidad([FromBody] PublicidadCrearSolicitud request)
     {
         var empresa = await _context.Empresas.FindAsync(request.EmpresaId);
 
         if (empresa == null)
         {
             return BadRequest("La empresa seleccionada no existe.");
+        }
+
+        if (!empresa.Activo)
+        {
+            return Conflict(new { mensaje = "No se puede registrar una publicidad para una empresa inactiva." });
+        }
+
+        var nombreNormalizado = request.NombrePublicidad.Trim().ToUpper();
+        var existeNombre = await _context.Publicidades.AnyAsync(p => p.NombrePublicidad == nombreNormalizado);
+        if (existeNombre)
+        {
+            return Conflict(new { mensaje = "Ya existe una publicidad registrada con ese nombre." });
         }
 
         if (request.FechaFin < request.FechaInicio)
@@ -90,7 +102,7 @@ public class PublicidadesController : ControllerBase
         var publicidad = new Publicidad
         {
             EmpresaId = request.EmpresaId,
-            NombrePublicidad = request.NombrePublicidad.Trim(),
+            NombrePublicidad = nombreNormalizado,
             TipoPantalla = request.TipoPantalla,
             DuracionVideoSegundos = request.DuracionVideoSegundos,
             DuracionMeses = request.DuracionMeses,
@@ -101,7 +113,14 @@ public class PublicidadesController : ControllerBase
         };
 
         _context.Publicidades.Add(publicidad);
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            return Conflict(new { mensaje = "No fue posible registrar la publicidad porque el nombre ya existe." });
+        }
 
         publicidad.Empresa = empresa;
 
@@ -110,9 +129,9 @@ public class PublicidadesController : ControllerBase
         return CreatedAtAction(nameof(GetPublicidad), new { id = publicidad.Id }, response);
     }
 
-    private static PublicidadResponse MapToResponse(Publicidad publicidad)
+    private static PublicidadRespuesta MapToResponse(Publicidad publicidad)
     {
-        return new PublicidadResponse
+        return new PublicidadRespuesta
         {
             Id = publicidad.Id,
             EmpresaId = publicidad.EmpresaId,

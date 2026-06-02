@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Net.Backend.Data;
+using SistemaPublicidad.Net.Backend.Data;
 using SistemaPublicidad.Net.Backend.Models;
 using SistemaPublicidad.Net.Backend.Dtos;
 
@@ -23,7 +23,7 @@ namespace Net.Backend.Controllers
             var precios = await _db.Precios
                 .OrderBy(p => p.TipoPantalla)
                 .ThenBy(p => p.DuracionSegundos)
-                .Select(p => new PrecioResponse
+                .Select(p => new PrecioRespuesta
                 {
                     Id = p.Id,
                     TipoPantalla = p.TipoPantalla,
@@ -38,7 +38,7 @@ namespace Net.Backend.Controllers
 
         // Reemplaza todas las entradas de precios por la lista enviada.
         [HttpPost]
-        public async Task<IActionResult> SetPrecios([FromBody] List<PrecioCreateRequest> entradas)
+        public async Task<IActionResult> SetPrecios([FromBody] List<PrecioCrearSolicitud> entradas)
         {
             if (entradas == null)
             {

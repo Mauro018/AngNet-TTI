@@ -122,8 +122,7 @@
         <label for="estado">Estado *</label>
         <select id="estado" formControlName="estado" [class.form-group__input--error]="isInvalid('estado')">
           <option value="Activa">Activa</option>
-          <option value="Pendiente">Pendiente</option>
-          <option value="Suspendida">Suspendida</option>
+          <option value="Inactiva">Inactiva</option>
         </select>
         <span class="form-group__error" *ngIf="isInvalid('estado')">
           {{ getErrorMessage('estado') }}
@@ -142,6 +141,10 @@
 
     <span class="form-note" *ngIf="form.invalid && form.touched">
       Por favor completa todos los campos correctamente.
+    </span>
+
+    <span class="form-note form-note--error" *ngIf="errorMessage">
+      {{ errorMessage }}
     </span>
   </form>
 </section>

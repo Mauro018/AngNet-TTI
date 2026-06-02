@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
-using Net.Backend.Data;                     //Esto cambia de acuerdo al namespace que se este usando
+using SistemaPublicidad.Net.Backend.Data;                     //Esto cambia de acuerdo al namespace que se este usando
 
 var builder = WebApplication.CreateBuilder(args);
 

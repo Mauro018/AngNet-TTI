@@ -25,7 +25,11 @@
       </header>
 
       <div class="companies-layout">
-        <app-formulario-empresa #empresaForm (empresaAgregada)="agregarEmpresa($event, empresaForm)" />
+        <app-formulario-empresa
+          #empresaForm
+          [errorMessage]="empresaErrorMessage()"
+          (empresaAgregada)="agregarEmpresa($event, empresaForm)"
+        />
         <app-lista-empresas [empresas]="empresasRegistradas()" />
       </div>
     </section>
@@ -40,6 +44,7 @@
         <app-formulario-publicidad
           #publicidadForm
           [empresas]="empresasRegistradas()"
+          [errorMessage]="publicidadErrorMessage()"
           (publicidadAgregada)="agregarPublicidad($event, publicidadForm)"
         />
         <app-lista-publicidades [publicidades]="publicidadesRegistradas()" />

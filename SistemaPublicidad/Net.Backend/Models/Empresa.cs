@@ -34,8 +34,6 @@ namespace SistemaPublicidad.Net.Backend.Models
         public string Direccion { get; set; } = string.Empty;
 
         public bool Activo { get; set; } = true;
-        public bool Pendiente { get; set; } = true;
-        public bool Suspendido { get; set; } = false;
 
         public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
 
