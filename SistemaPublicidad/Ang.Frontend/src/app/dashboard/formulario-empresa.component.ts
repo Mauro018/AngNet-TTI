@@ -50,6 +50,7 @@ export class FormularioEmpresaComponent implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    console.log("llegue")
     if (changes['empresaEditando']) {
       const e = this.empresaEditando;
       if (e) {

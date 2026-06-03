@@ -1,6 +1,6 @@
 ﻿// Lista de publicidades registradas con control visual de vencimiento.
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges } from '@angular/core';
 
 import { Publicidad } from '../shared/models/modelo-publicidad';
 import { PublicidadService } from '../services/publicidad';
@@ -15,6 +15,73 @@ import { PublicidadService } from '../services/publicidad';
 export class ListaPublicidadesComponent {
   @Input() publicidades: Publicidad[] = [];
   @Output() editarPublicidad = new EventEmitter<Publicidad>();
+
+  // ---------------------- Paginación ------------------------------
+  currentPage = 1;
+    readonly itemsPerPage = 10;
+  
+    /** Se ejecuta cada vez que el @Input `publicidades` cambia.
+     *  Vuelve a la página 1 para no quedar en una página vacía. */
+    ngOnChanges(): void {
+      this.currentPage = 1;
+    }
+  
+    /** Número total de páginas según el tamaño de la lista. */
+    get totalPages(): number {
+      return Math.max(1, Math.ceil(this.publicidades.length / this.itemsPerPage));
+    }
+  
+    /** Solo el trozo de la lista que corresponde a la página actual. */
+    get paginacionPublicidades(): Publicidad[] {
+      const start = (this.currentPage - 1) * this.itemsPerPage;
+      return this.publicidades.slice(start, start + this.itemsPerPage);
+    }
+  
+    /** Primer registro visible en la página actual (para el texto "Mostrando X–Y"). */
+    get startIndex(): number {
+      return this.publicidades.length === 0 ? 0 : (this.currentPage - 1) * this.itemsPerPage + 1;
+    }
+  
+    /** Último registro visible en la página actual. */
+    get endIndex(): number {
+      return Math.min(this.currentPage * this.itemsPerPage, this.publicidades.length);
+    }
+  
+    /**
+     * Genera el array de botones del paginador.
+     * `null` representa "…" (puntos suspensivos) para saltos grandes.
+     *
+     * Ejemplos:
+     *   5 páginas → [1, 2, 3, 4, 5]
+     *   Página 1 de 10 → [1, 2, 3, 4, 5, null, 10]
+     *   Página 5 de 10 → [1, null, 4, 5, 6, null, 10]
+     *   Página 9 de 10 → [1, null, 6, 7, 8, 9, 10]
+     */
+    get pageNumbers(): (number | null)[] {
+      const total = this.totalPages;
+      if (total <= 7) {
+        return Array.from({ length: total }, (_, i) => i + 1);
+      }
+  
+      const cur = this.currentPage;
+  
+      if (cur <= 4) {
+        return [1, 2, 3, 4, 5, null, total];
+      }
+      if (cur >= total - 3) {
+        return [1, null, total - 4, total - 3, total - 2, total - 1, total];
+      }
+      return [1, null, cur - 1, cur, cur + 1, null, total];
+    }
+  
+    goToPage(page: number): void {
+      if (page >= 1 && page <= this.totalPages) {
+        this.currentPage = page;
+      }
+    }
+  
+    prevPage(): void { this.goToPage(this.currentPage - 1); }
+    nextPage(): void { this.goToPage(this.currentPage + 1); }
 
   constructor(private readonly publicidadService: PublicidadService) {}
 

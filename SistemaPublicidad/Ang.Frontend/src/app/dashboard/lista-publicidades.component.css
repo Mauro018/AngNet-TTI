@@ -131,12 +131,12 @@
 }
 
 .button-action--view {
-  border: 1px solid var(--info, #3b82f6);
+  border: 1px solid var(--info, #22b464);
   background: transparent;
-  color: var(--info, #3b82f6);
+  color: var(--info, #309627);
 }
 .button-action--view:hover {
-  background: var(--info, #3b82f6);
+  background: var(--info, #4ab321);
   color: #fff;
 }
 
@@ -190,6 +190,130 @@
   font-size: 0.9rem;
 }
 
+/* ═══════════════════════════════════════════
+   PAGINACIÓN
+═══════════════════════════════════════════ */
+.pagination {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 1.25rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--border);
+}
+
+.pagination-info {
+  font-size: 0.84rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.pagination-info strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Botón base */
+.page-btn {
+  min-width: 2.1rem;
+  height: 2.1rem;
+  padding: 0 0.5rem;
+  border-radius: 0.45rem;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  user-select: none;
+}
+
+/* Hover: resalta con el verde primario */
+.page-btn:hover:not(:disabled):not(.page-btn--active) {
+  background: rgba(15, 122, 74, 0.08);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* Página activa: fondo verde sólido */
+.page-btn--active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+  font-weight: 700;
+  cursor: default;
+  box-shadow: 0 2px 8px rgba(15, 122, 74, 0.25);
+}
+
+/* Botones ‹ › (anterior / siguiente) */
+.page-btn--nav {
+  font-size: 1.35rem;
+  font-weight: 400;
+  color: var(--primary);
+  border-color: color-mix(in srgb, var(--border) 60%, var(--primary));
+}
+
+.page-btn--nav:hover:not(:disabled) {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+/* Botón deshabilitado */
+.page-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Puntos suspensivos */
+.page-ellipsis {
+  min-width: 2.1rem;
+  height: 2.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  user-select: none;
+}
+
+/* ── Responsive ── */
+@media (max-width: 720px) {
+  .pagination {
+    gap: 0.6rem;
+  }
+
+  .page-btn {
+    min-width: 2rem;
+    height: 2rem;
+    font-size: 0.82rem;
+    border-radius: 0.4rem;
+  }
+
+  .page-btn--nav {
+    font-size: 1.2rem;
+  }
+
+  .page-ellipsis {
+    min-width: 1.5rem;
+  }
+}
 @media (max-width: 720px) {
   .list-header {
     flex-direction: column;

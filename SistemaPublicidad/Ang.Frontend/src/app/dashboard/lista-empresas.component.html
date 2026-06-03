@@ -17,12 +17,13 @@
         <div class="table-cell table-cell--actions">Acciones</div>
       </div>
 
+      <!-- Estado vacío: sin empresas -->
       <div *ngIf="empresas.length === 0" class="empty-state">
         <p>No hay empresas registradas aún.</p>
         <span>Usa el formulario anterior para crear la primera empresa.</span>
       </div>
 
-      <div *ngFor="let company of empresas" class="table-row">
+      <div *ngFor="let company of paginatedEmpresas" class="table-row">
         <div class="table-cell table-cell--id-name" data-label="ID / Nombre">
           <span class="id-badge">#{{ company.id }}</span>
           <strong>{{ company.nombre }}</strong>
@@ -56,4 +57,46 @@
       </div>
     </div>
   </div>
+
+  <!-- ─── PAGINACIÓN (solo aparece si hay más de 1 página) ─── -->
+  <nav *ngIf="totalPages > 1" class="pagination" aria-label="Paginación de empresas">
+    <p class="pagination-info">
+      Mostrando <strong>{{ startIndex }}–{{ endIndex }}</strong>
+      de <strong>{{ empresas.length }}</strong>
+      empresa{{ empresas.length !== 1 ? 's' : '' }}
+    </p>
+
+    <div class="pagination-controls">
+      <!-- Botón anterior -->
+      <button
+        class="page-btn page-btn--nav"
+        [disabled]="currentPage === 1"
+        (click)="prevPage()"
+        aria-label="Página anterior">
+        &#8249;
+      </button>
+
+      <!-- Números de página / puntos suspensivos -->
+      <ng-container *ngFor="let page of pageNumbers">
+        <span *ngIf="page === null" class="page-ellipsis" aria-hidden="true">…</span>
+        <button
+          *ngIf="page !== null"
+          class="page-btn"
+          [class.page-btn--active]="page === currentPage"
+          [attr.aria-current]="page === currentPage ? 'page' : null"
+          (click)="goToPage(page)">
+          {{ page }}
+        </button>
+      </ng-container>
+
+      <!-- Botón siguiente -->
+      <button
+        class="page-btn page-btn--nav"
+        [disabled]="currentPage === totalPages"
+        (click)="nextPage()"
+        aria-label="Página siguiente">
+        &#8250;
+      </button>
+    </div>
+  </nav>
 </section>
