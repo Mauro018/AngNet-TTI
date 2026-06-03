@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+﻿import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 
@@ -13,6 +13,13 @@ export interface NuevaPublicidadEntrada {
   duracionMeses: number;
   fechaInicio: string;
   fechaFin: string;
+  observaciones: string;
+  video: File;
+}
+
+export interface EditarPublicidadEntrada {
+  duracionMeses: number;
+  fechaInicio: string;
   observaciones: string;
 }
 
@@ -30,6 +37,7 @@ interface PublicidadApi {
   fechaFin: string;
   diasDuracion: number;
   observaciones: string;
+  videoNombreArchivo: string;
 }
 
 @Injectable({
@@ -47,9 +55,47 @@ export class PublicidadService {
   }
 
   crearPublicidad(entrada: NuevaPublicidadEntrada): Observable<Publicidad> {
-    return this.http.post<PublicidadApi>(this.apiUrl, this.mapParaApi(entrada)).pipe(
+    const formData = new FormData();
+    formData.append('empresaId', String(entrada.empresaId));
+    formData.append('nombrePublicidad', entrada.nombrePublicidad.trim());
+    formData.append('tipoPantalla', entrada.tipoPantalla);
+    formData.append('duracionVideoSegundos', String(entrada.duracionVideoSegundos));
+    formData.append('duracionMeses', String(entrada.duracionMeses));
+    formData.append('fechaInicio', new Date(`${entrada.fechaInicio}T00:00:00`).toISOString());
+    formData.append('fechaFin', new Date(`${entrada.fechaFin}T23:59:59`).toISOString());
+    formData.append('observaciones', entrada.observaciones.trim());
+    formData.append('video', entrada.video, entrada.video.name);
+
+    return this.http.post<PublicidadApi>(this.apiUrl, formData).pipe(
       map((response) => this.mapDesdeApi(response))
     );
+  }
+
+  editarPublicidad(id: number, datos: EditarPublicidadEntrada): Observable<Publicidad> {
+    const body = {
+      duracionMeses: datos.duracionMeses,
+      fechaInicio: new Date(`${datos.fechaInicio}T00:00:00`).toISOString(),
+      observaciones: datos.observaciones.trim(),
+    };
+    return this.http.put<PublicidadApi>(`${this.apiUrl}/${id}`, body).pipe(
+      map((response) => this.mapDesdeApi(response))
+    );
+  }
+
+  reemplazarVideo(id: number, video: File): Observable<Publicidad> {
+    const formData = new FormData();
+    formData.append('video', video, video.name);
+    return this.http.patch<PublicidadApi>(`${this.apiUrl}/${id}/video`, formData).pipe(
+      map((response) => this.mapDesdeApi(response))
+    );
+  }
+
+  getUrlVideo(id: number): string {
+    return `${this.apiUrl}/${id}/video`;
+  }
+
+  getUrlDescarga(id: number): string {
+    return `${this.apiUrl}/${id}/descarga`;
   }
 
   private mapDesdeApi(publicidad: PublicidadApi): Publicidad {
@@ -67,22 +113,9 @@ export class PublicidadService {
       fechaFin: publicidad.fechaFin.slice(0, 10),
       diasDuracion: publicidad.diasDuracion,
       observaciones: publicidad.observaciones,
-    };
-  }
-
-  private mapParaApi(entrada: NuevaPublicidadEntrada): NuevaPublicidadEntrada {
-    const startIso = new Date(`${entrada.fechaInicio}T00:00:00`).toISOString();
-    const endIso = new Date(`${entrada.fechaFin}T23:59:59`).toISOString();
-
-    return {
-      empresaId: Number(entrada.empresaId),
-      nombrePublicidad: entrada.nombrePublicidad.trim(),
-      tipoPantalla: entrada.tipoPantalla,
-      duracionVideoSegundos: Number(entrada.duracionVideoSegundos),
-      duracionMeses: Number(entrada.duracionMeses),
-      fechaInicio: startIso,
-      fechaFin: endIso,
-      observaciones: entrada.observaciones.trim(),
+      videoNombreArchivo: publicidad.videoNombreArchivo,
     };
   }
 }
+
+

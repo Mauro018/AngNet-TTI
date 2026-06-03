@@ -29,6 +29,10 @@ namespace SistemaPublicidad.Net.Backend.Models
         [StringLength(300)]
         public string Descripcion { get; set; } = string.Empty;
 
+        // Nombre del archivo de video almacenado en el servidor (ej. "abc123.mp4").
+        [StringLength(260)]
+        public string VideoNombreArchivo { get; set; } = string.Empty;
+
         //Clave foránea
         public int EmpresaId { get; set; }
         public Empresa Empresa { get; set; } = null!;

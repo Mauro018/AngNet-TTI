@@ -1,7 +1,7 @@
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Empresa } from '../shared/models/modelo-publicidad';
+import { Empresa, SectorIndustriaEmpresa } from '../shared/models/modelo-publicidad';
 import { InputFilterDirective } from '../shared/directives/input-filter.directive';
 
 @Component({
@@ -11,26 +11,70 @@ import { InputFilterDirective } from '../shared/directives/input-filter.directiv
   templateUrl: './formulario-empresa.component.html',
   styleUrls: ['./formulario-empresa.component.css'],
 })
-export class FormularioEmpresaComponent {
+export class FormularioEmpresaComponent implements OnChanges {
   private readonly formBuilder = inject(FormBuilder);
 
   @Input() errorMessage = '';
+  /** Empresa a editar. Si es null el formulario está en modo creación. */
+  @Input() empresaEditando: Empresa | null = null;
 
   @Output() empresaAgregada = new EventEmitter<Omit<Empresa, 'id'>>();
+  @Output() empresaEditada  = new EventEmitter<{ id: number; datos: Omit<Empresa, 'id'> }>();
+  @Output() cancelado       = new EventEmitter<void>();
 
-  // Formulario reactivo con validaciones mínimas para guardar datos consistentes.
+  protected readonly sectoresIndustria: Array<{ value: SectorIndustriaEmpresa; label: string }> = [
+    { value: 'TRANSPORTE',               label: 'Transporte' },
+    { value: 'TECNOLOGIA',               label: 'Tecnología' },
+    { value: 'SALUD',                    label: 'Salud' },
+    { value: 'GOBIERNO_E_INST_PUBLICAS', label: 'Gobierno e Inst. Públicas' },
+    { value: 'ALIMENTOS',               label: 'Alimentos' },
+    { value: 'COMERCIO',                label: 'Comercio' },
+    { value: 'ASEO',                    label: 'Aseo' },
+    { value: 'FINANCIERO',              label: 'Financiero' },
+    { value: 'OTROS',                   label: 'Otros' },
+  ];
+
   protected readonly form = this.formBuilder.nonNullable.group({
-    nombre: ['', [Validators.required, Validators.minLength(3)]],
-    nit: ['', [Validators.required, Validators.pattern(/^\d{9,}$/)]],
-    contacto: ['', [Validators.required, Validators.minLength(2)]],
-    sectorIndustria: ['', [Validators.required, Validators.minLength(3)]],
-    telefono: ['', [Validators.required, Validators.pattern(/^\d{7,}$/)]],
-    correo: ['', [Validators.required, Validators.email]],
-    direccion: ['', [Validators.required, Validators.minLength(5)]],
-    estado: ['Activa', Validators.required],
+    nombre:          ['', [Validators.required, Validators.minLength(3)]],
+    nit:             ['', [Validators.required, Validators.pattern(/^\d{9,}$/)]],
+    representante:   ['', [Validators.required, Validators.minLength(2)]],
+    cedula:          ['', [Validators.required, Validators.pattern(/^\d{5,}$/)]],
+    sectorIndustria: ['OTROS' as SectorIndustriaEmpresa, Validators.required],
+    telefono:        ['', [Validators.required, Validators.pattern(/^\d{7,}$/)]],
+    correo:          ['', [Validators.required, Validators.email]],
+    estado:          ['Activa', Validators.required],
   });
 
-  // Valida el formulario, normaliza la información y emite la nueva empresa.
+  get modoEdicion(): boolean {
+    return this.empresaEditando !== null;
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['empresaEditando']) {
+      const e = this.empresaEditando;
+      if (e) {
+        // Cargar datos; bloquear campos que no se pueden editar.
+        this.form.patchValue({
+          nombre:          e.nombre,
+          nit:             e.nit,
+          representante:   e.representante,
+          cedula:          e.cedula,
+          sectorIndustria: e.sectorIndustria,
+          telefono:        e.telefono,
+          correo:          e.correo,
+          estado:          e.estado,
+        });
+        this.form.controls.nombre.disable();
+        this.form.controls.nit.disable();
+        this.form.controls.sectorIndustria.disable();
+      } else {
+        this.form.controls.nombre.enable();
+        this.form.controls.nit.enable();
+        this.form.controls.sectorIndustria.enable();
+      }
+    }
+  }
+
   protected submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -38,48 +82,62 @@ export class FormularioEmpresaComponent {
     }
 
     const value = this.form.getRawValue();
-    this.empresaAgregada.emit({
-      nombre: value.nombre.trim(),
-      nit: value.nit.trim(),
-      contacto: value.contacto.trim(),
-      sectorIndustria: value.sectorIndustria.trim(),
-      telefono: value.telefono.trim(),
-      correo: value.correo.trim(),
-      direccion: value.direccion.trim(),
-      estado: value.estado as 'Activa' | 'Inactiva',
-      fechaRegistro: new Date().toISOString().slice(0, 10),
-    });
+    const datos: Omit<Empresa, 'id'> = {
+      nombre:          value.nombre.trim(),
+      nit:             value.nit.trim(),
+      representante:   value.representante.trim(),
+      cedula:          value.cedula.trim(),
+      sectorIndustria: value.sectorIndustria as SectorIndustriaEmpresa,
+      telefono:        value.telefono.trim(),
+      correo:          value.correo.trim(),
+      estado:          value.estado as 'Activa' | 'Inactiva',
+      fechaRegistro:   new Date().toISOString().slice(0, 10),
+    };
+
+    if (this.modoEdicion && this.empresaEditando) {
+      this.empresaEditada.emit({ id: this.empresaEditando.id, datos });
+    } else {
+      this.empresaAgregada.emit(datos);
+    }
   }
 
-  // Limpia el formulario y devuelve los valores iniciales.
   clear(): void {
+    const eraEdicion = this.modoEdicion;
+    this.form.controls.nombre.enable();
+    this.form.controls.nit.enable();
+    this.form.controls.sectorIndustria.enable();
     this.form.reset({
-      nombre: '',
-      nit: '',
-      contacto: '',
-      sectorIndustria: '',
-      telefono: '',
-      correo: '',
-      direccion: '',
-      estado: 'Activa',
+      nombre:          '',
+      nit:             '',
+      representante:   '',
+      cedula:          '',
+      sectorIndustria: 'OTROS',
+      telefono:        '',
+      correo:          '',
+      estado:          'Activa',
     });
+    if (eraEdicion) {
+      this.cancelado.emit();
+    }
   }
 
-  // Indica si un control debe mostrarse en estado de error visual.
-  protected isInvalid(controlName: 'nombre' | 'nit' | 'contacto' | 'sectorIndustria' | 'telefono' | 'correo' | 'direccion' | 'estado'): boolean {
+  protected isInvalid(controlName: 'nombre' | 'nit' | 'representante' | 'cedula' | 'sectorIndustria' | 'telefono' | 'correo' | 'estado'): boolean {
     const control = this.form.get(controlName);
     return control ? control.invalid && (control.touched || control.dirty) : false;
   }
 
-  // Devuelve un texto de error corto para mostrar debajo del campo.
-  protected getErrorMessage(controlName: 'nombre' | 'nit' | 'contacto' | 'sectorIndustria' | 'telefono' | 'correo' | 'direccion' | 'estado'): string {
+  protected getErrorMessage(controlName: 'nombre' | 'nit' | 'representante' | 'cedula' | 'sectorIndustria' | 'telefono' | 'correo' | 'estado'): string {
     const control = this.form.get(controlName);
     if (!control?.errors) return '';
 
-    if (control.errors['required']) return 'Este campo es requerido.';
+    if (control.errors['required'])  return 'Este campo es requerido.';
     if (control.errors['minlength']) return `Mínimo ${control.errors['minlength'].requiredLength} caracteres.`;
-    if (control.errors['email']) return 'Correo electrónico inválido.';
-    if (control.errors['pattern']) return 'Teléfono debe tener al menos 7 dígitos.';
+    if (control.errors['email'])     return 'Correo electrónico inválido.';
+    if (control.errors['pattern']) {
+      if (controlName === 'cedula')   return 'La cédula debe tener al menos 5 dígitos.';
+      if (controlName === 'nit')      return 'El NIT debe tener al menos 9 dígitos.';
+      return 'Teléfono debe tener al menos 7 dígitos.';
+    }
 
     return 'Campo inválido.';
   }

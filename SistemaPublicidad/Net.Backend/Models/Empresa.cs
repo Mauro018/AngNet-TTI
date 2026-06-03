@@ -2,6 +2,19 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SistemaPublicidad.Net.Backend.Models
 {
+    public enum SectorIndustria
+    {
+        TRANSPORTE,
+        TECNOLOGIA,
+        SALUD,
+        GOBIERNO_E_INST_PUBLICAS,
+        ALIMENTOS,
+        COMERCIO,
+        ASEO,
+        FINANCIERO,
+        OTROS
+    }
+
     public class Empresa
     {
         public int Id { get; set; }
@@ -16,10 +29,14 @@ namespace SistemaPublicidad.Net.Backend.Models
 
         [Required]
         [StringLength(100)]
-        public string Contacto { get; set; } = string.Empty;
+        public string Representante { get; set; } = string.Empty;
 
-        [StringLength(100)]
-        public string SectorIndustria { get; set; } = string.Empty;
+        [Required]
+        [StringLength(20)]
+        public string Cedula { get; set; } = string.Empty;
+
+        [Required]
+        public SectorIndustria SectorIndustria { get; set; } = SectorIndustria.OTROS;
 
         [Required]
         [StringLength(20)]
@@ -28,10 +45,6 @@ namespace SistemaPublicidad.Net.Backend.Models
         [Required]
         [StringLength(150)]
         public string Email { get; set; } = string.Empty;
-
-        [Required]
-        [StringLength(300)]
-        public string Direccion { get; set; } = string.Empty;
 
         public bool Activo { get; set; } = true;
 

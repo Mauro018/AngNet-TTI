@@ -1,13 +1,13 @@
 <section class="company-form-container">
   <header class="form-header">
-    <h3>Registrar nueva empresa</h3>
-    <p>Ingresa la información de la empresa para crear un nuevo registro en el sistema.</p>
+    <h3>{{ modoEdicion ? 'Editar empresa' : 'Registrar nueva empresa' }}</h3>
+    <p>{{ modoEdicion ? 'Modifica los datos del representante, teléfono, correo o estado.' : 'Ingresa la información de la empresa para crear un nuevo registro en el sistema.' }}</p>
   </header>
 
   <form [formGroup]="form" (ngSubmit)="submit()" class="company-form">
     <!-- Hidden reference to directive so static analyzer recognizes usage -->
     <span *ngIf="false" appInputFilter="alpha"></span>
-    <div class="form-row">
+    <div class="form-row form-row--three">
       <div class="form-group">
         <label for="nombre">Nombre de la empresa *</label>
         <input
@@ -40,39 +40,52 @@
       </div>
 
       <div class="form-group">
-        <label for="contacto">Persona de contacto *</label>
-        <input
-          id="contacto"
-          type="text"
-          formControlName="contacto"
-          appInputFilter="alpha"
-          [uppercase]="true"
-          placeholder="Ej. Juan López"
-          [class.form-group__input--error]="isInvalid('contacto')"
-        />
-        <span class="form-group__error" *ngIf="isInvalid('contacto')">
-          {{ getErrorMessage('contacto') }}
-        </span>
-      </div>
-
-      <div class="form-group">
         <label for="sectorIndustria">Sector de la industria *</label>
-        <input
+        <select
           id="sectorIndustria"
-          type="text"
           formControlName="sectorIndustria"
-          appInputFilter="alpha"
-          [uppercase]="true"
-          placeholder="Ej. Comercio"
           [class.form-group__input--error]="isInvalid('sectorIndustria')"
-        />
+        >
+          @for (sector of sectoresIndustria; track sector.value) {
+            <option [ngValue]="sector.value">{{ sector.label }}</option>
+          }
+        </select>
         <span class="form-group__error" *ngIf="isInvalid('sectorIndustria')">
           {{ getErrorMessage('sectorIndustria') }}
         </span>
       </div>
-    </div>
 
-    <div class="form-row">
+      <div class="form-group">
+        <label for="representante">Representante *</label>
+        <input
+          id="representante"
+          type="text"
+          formControlName="representante"
+          appInputFilter="alpha"
+          [uppercase]="true"
+          placeholder="Ej. Juan López"
+          [class.form-group__input--error]="isInvalid('representante')"
+        />
+        <span class="form-group__error" *ngIf="isInvalid('representante')">
+          {{ getErrorMessage('representante') }}
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label for="cedula">Cédula del representante *</label>
+        <input
+          id="cedula"
+          type="text"
+          formControlName="cedula"
+          appInputFilter="numeric"
+          placeholder="Ej. 1056789123"
+          [class.form-group__input--error]="isInvalid('cedula')"
+        />
+        <span class="form-group__error" *ngIf="isInvalid('cedula')">
+          {{ getErrorMessage('cedula') }}
+        </span>
+      </div>
+
       <div class="form-group">
         <label for="telefono">Teléfono *</label>
         <input
@@ -103,22 +116,6 @@
       </div>
 
       <div class="form-group">
-        <label for="direccion">Dirección *</label>
-        <input
-          id="direccion"
-          type="text"
-          formControlName="direccion"
-          appInputFilter="alphanumeric"
-          [uppercase]="true"
-          placeholder="Ej. Cra 3 # 9-50, Ibagué, Tolima"
-          [class.form-group__input--error]="isInvalid('direccion')"
-        />
-        <span class="form-group__error" *ngIf="isInvalid('direccion')">
-          {{ getErrorMessage('direccion') }}
-        </span>
-      </div>
-
-      <div class="form-group">
         <label for="estado">Estado *</label>
         <select id="estado" formControlName="estado" [class.form-group__input--error]="isInvalid('estado')">
           <option value="Activa">Activa</option>
@@ -132,10 +129,10 @@
 
     <div class="form-actions">
       <button type="submit" class="button button--primary" [disabled]="form.invalid">
-        Registrar empresa
+        {{ modoEdicion ? 'Guardar cambios' : 'Registrar empresa' }}
       </button>
       <button type="button" class="button button--secondary" (click)="clear()">
-        Limpiar formulario
+        {{ modoEdicion ? 'Cancelar' : 'Limpiar formulario' }}
       </button>
     </div>
 
@@ -148,3 +145,4 @@
     </span>
   </form>
 </section>
+

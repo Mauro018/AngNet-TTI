@@ -44,18 +44,20 @@
 
 .table-header {
   display: grid;
-  grid-template-columns: minmax(150px, 1.4fr) minmax(140px, 1.2fr) 150px 150px 140px 80px;
+  grid-template-columns: minmax(150px, 1.6fr) minmax(130px, 1.2fr) 130px 180px 110px 210px;
   padding: 1rem;
   background: var(--surface-muted);
   border-bottom: 2px solid var(--border);
   font-weight: 600;
   font-size: 0.85rem;
   color: var(--text);
+  position: sticky;
+  top: 0;
 }
 
 .table-row {
   display: grid;
-  grid-template-columns: minmax(150px, 1.4fr) minmax(140px, 1.2fr) 150px 150px 140px 80px;
+  grid-template-columns: minmax(150px, 1.6fr) minmax(130px, 1.2fr) 130px 180px 110px 210px;
   padding: 1rem;
   border-bottom: 1px solid var(--border);
   align-items: center;
@@ -74,12 +76,84 @@
   white-space: nowrap;
 }
 
-.status-badge {
-  display: inline-block;
-  padding: 0.4rem 0.75rem;
-  border-radius: 0.35rem;
+.table-cell--id-name {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.id-badge {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.fecha-fin-label {
   font-size: 0.8rem;
-  font-weight: 600;
+  color: var(--muted);
+}
+
+.table-cell--dates {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.table-cell--actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.button-action {
+  padding: 0.35rem 0.6rem;
+  border-radius: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.button-action--edit {
+  border: 1px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+}
+.button-action--edit:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+.button-action--view {
+  border: 1px solid var(--info, #3b82f6);
+  background: transparent;
+  color: var(--info, #3b82f6);
+}
+.button-action--view:hover {
+  background: var(--info, #3b82f6);
+  color: #fff;
+}
+
+.button-action--download {
+  border: 1px solid var(--muted);
+  background: transparent;
+  color: var(--muted);
+}
+.button-action--download:hover {
+  background: var(--muted);
+  color: #fff;
+}
+
+.sin-video {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-style: italic;
 }
 
 .status-badge--success {
@@ -145,27 +219,10 @@
     color: var(--text);
   }
 
-  .table-cell--company::before {
-    content: 'Empresa: ';
-  }
-
-  .table-cell--name::before {
-    content: 'Publicidad: ';
-  }
-
-  .table-cell--start::before {
-    content: 'Inicio: ';
-  }
-
-  .table-cell--end::before {
-    content: 'Fin: ';
-  }
-
-  .table-cell--days::before {
-    content: 'Días: ';
-  }
-
-  .table-cell--status::before {
-    content: 'Estado: ';
-  }
+  .table-cell--id-name::before { content: 'ID / Nombre: '; }
+  .table-cell--company::before { content: 'Empresa: '; }
+  .table-cell--duration::before { content: 'Video / Meses: '; }
+  .table-cell--dates::before { content: 'Inicio / Fin: '; }
+  .table-cell--days::before { content: 'Días: '; }
+  .table-cell--actions::before { content: 'Acciones: '; }
 }

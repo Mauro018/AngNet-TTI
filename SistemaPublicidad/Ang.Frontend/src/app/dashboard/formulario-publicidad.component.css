@@ -28,6 +28,29 @@
   gap: 1.25rem;
 }
 
+.form-row--three {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.form-group__file-input {
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.form-group__file-hint {
+  font-size: 0.82rem;
+  color: var(--primary);
+  margin-top: 0.15rem;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .form-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

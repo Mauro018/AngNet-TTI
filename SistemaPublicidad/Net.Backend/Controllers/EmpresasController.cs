@@ -31,7 +31,7 @@ public class EmpresasController : ControllerBase
             await _context.SaveChangesAsync();
         }
 
-        return await _context.Empresas.ToListAsync();
+        return await _context.Empresas.OrderBy(e => e.Id).ToListAsync();
     }
 
     // GET: api/Empresas/5
@@ -69,6 +69,8 @@ public class EmpresasController : ControllerBase
 
         empresa.Nit = nitNormalizado;
         empresa.Telefono = telefonoNormalizado;
+        empresa.Representante = empresa.Representante.Trim();
+        empresa.Cedula = empresa.Cedula.Trim();
         empresa.Activo = empresa.Activo;
         empresa.FechaCreacion = DateTime.UtcNow;
 
@@ -83,5 +85,31 @@ public class EmpresasController : ControllerBase
         }
 
         return CreatedAtAction(nameof(GetEmpresa), new { id = empresa.Id }, empresa);
+    }
+
+    // PUT: api/Empresas/5
+    [HttpPut("{id}")]
+    public async Task<ActionResult<Empresa>> PutEmpresa(int id, [FromBody] Empresa datos)
+    {
+        var empresa = await _context.Empresas.FindAsync(id);
+        if (empresa == null)
+            return NotFound();
+
+        empresa.Representante = datos.Representante.Trim();
+        empresa.Cedula        = datos.Cedula.Trim();
+        empresa.Telefono      = datos.Telefono.Trim();
+        empresa.Email         = datos.Email.Trim();
+        empresa.Activo        = datos.Activo;
+
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            return Conflict(new { mensaje = "No fue posible actualizar la empresa." });
+        }
+
+        return empresa;
     }
 }

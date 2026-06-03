@@ -15,5 +15,6 @@ namespace SistemaPublicidad.Net.Backend.Dtos
         public string FechaFin { get; set; } = string.Empty;
         public int DiasDuracion { get; set; }
         public string Observaciones { get; set; } = string.Empty;
+        public string VideoNombreArchivo { get; set; } = string.Empty;
     }
 }

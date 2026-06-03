@@ -31,16 +31,27 @@ export interface TarjetaEstado {
   description: string;
 }
 
+export type SectorIndustriaEmpresa =
+  | 'TRANSPORTE'
+  | 'TECNOLOGIA'
+  | 'SALUD'
+  | 'GOBIERNO_E_INST_PUBLICAS'
+  | 'ALIMENTOS'
+  | 'COMERCIO'
+  | 'ASEO'
+  | 'FINANCIERO'
+  | 'OTROS';
+
 // Representa una empresa registrada en el sistema.
 export interface Empresa {
   id: number;
   nombre: string;
   nit: string;
-  contacto: string;
-  sectorIndustria: string;
+  representante: string;
+  cedula: string;
+  sectorIndustria: SectorIndustriaEmpresa;
   telefono: string;
   correo: string;
-  direccion: string;
   estado: EstadoEmpresa;
   fechaRegistro: string;
 }
@@ -60,4 +71,5 @@ export interface Publicidad {
   fechaFin: string;
   diasDuracion: number;
   observaciones: string;
+  videoNombreArchivo: string;
 }

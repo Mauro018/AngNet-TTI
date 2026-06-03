@@ -28,9 +28,15 @@
         <app-formulario-empresa
           #empresaForm
           [errorMessage]="empresaErrorMessage()"
+          [empresaEditando]="empresaEditando()"
           (empresaAgregada)="agregarEmpresa($event, empresaForm)"
+          (empresaEditada)="guardarEdicionEmpresa($event, empresaForm)"
+          (cancelado)="empresaEditando.set(null)"
         />
-        <app-lista-empresas [empresas]="empresasRegistradas()" />
+        <app-lista-empresas
+          [empresas]="empresasRegistradas()"
+          (editarEmpresa)="iniciarEdicion($event)"
+        />
       </div>
     </section>
   } @else if (seccionActiva() === 'Publicidades') {
@@ -45,9 +51,15 @@
           #publicidadForm
           [empresas]="empresasRegistradas()"
           [errorMessage]="publicidadErrorMessage()"
+          [publicidadEditando]="publicidadEditando()"
           (publicidadAgregada)="agregarPublicidad($event, publicidadForm)"
+          (publicidadEditada)="guardarEdicionPublicidad($event, publicidadForm)"
+          (cancelado)="publicidadEditando.set(null)"
         />
-        <app-lista-publicidades [publicidades]="publicidadesRegistradas()" />
+        <app-lista-publicidades
+          [publicidades]="publicidadesRegistradas()"
+          (editarPublicidad)="iniciarEdicionPublicidad($event)"
+        />
       </div>
     </section>
   } @else {

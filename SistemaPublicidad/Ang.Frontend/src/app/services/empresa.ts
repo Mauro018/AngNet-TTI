@@ -2,17 +2,17 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 import { environment } from '../environment/environment';
-import { Empresa } from '../shared/models/modelo-publicidad';
+import { Empresa, SectorIndustriaEmpresa } from '../shared/models/modelo-publicidad';
 
 interface EmpresaApi {
   id: number;
   nombre: string;
   nit: string;
-  contacto: string;
+  representante: string;
+  cedula: string;
   sectorIndustria: string;
   telefono: string;
   email: string;
-  direccion: string;
   activo: boolean;
   fechaCreacion: string;
 }
@@ -38,17 +38,23 @@ export class EmpresaService {
     );
   }
 
+  editarEmpresa(id: number, empresa: Omit<Empresa, 'id'>): Observable<Empresa> {
+    return this.http.put<EmpresaApi>(`${this.apiUrl}/${id}`, this.mapParaApi(empresa)).pipe(
+      map((response) => this.mapDesdeApi(response))
+    );
+  }
+
   private mapDesdeApi(empresa: EmpresaApi): Empresa {
     return {
       id: empresa.id,
       nombre: empresa.nombre,
       nit: empresa.nit,
-      contacto: empresa.contacto,
-      sectorIndustria: empresa.sectorIndustria,
+      representante: empresa.representante,
+      cedula: empresa.cedula,
+      sectorIndustria: empresa.sectorIndustria as SectorIndustriaEmpresa,
       telefono: empresa.telefono,
       correo: empresa.email,
-      direccion: empresa.direccion,
-        estado: empresa.activo ? 'Activa' : 'Inactiva',
+      estado: empresa.activo ? 'Activa' : 'Inactiva',
       fechaRegistro: new Date(empresa.fechaCreacion).toISOString().slice(0, 10),
     };
   }
@@ -57,11 +63,11 @@ export class EmpresaService {
     return {
       nombre: empresa.nombre.trim(),
       nit: empresa.nit.trim(),
-      contacto: empresa.contacto.trim(),
-      sectorIndustria: empresa.sectorIndustria.trim(),
+      representante: empresa.representante.trim(),
+      cedula: empresa.cedula.trim(),
+      sectorIndustria: empresa.sectorIndustria,
       telefono: empresa.telefono.trim(),
       email: empresa.correo.trim(),
-      direccion: empresa.direccion.trim(),
       activo: empresa.estado === 'Activa',
       fechaCreacion: new Date().toISOString(),
     };

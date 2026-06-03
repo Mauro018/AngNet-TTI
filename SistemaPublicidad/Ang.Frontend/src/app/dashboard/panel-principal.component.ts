@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 
 import { Empresa, Publicidad, TarjetaEstado, TarjetaMetrica } from '../shared/models/modelo-publicidad';
 import { EmpresaService } from '../services/empresa';
-import { NuevaPublicidadEntrada, PublicidadService } from '../services/publicidad';
+import { EditarPublicidadEntrada, NuevaPublicidadEntrada, PublicidadService } from '../services/publicidad';
 import { HeroeComponent } from './heroe.component';
 import { ResumenComponent } from './resumen.component';
 import { Navbar, SeccionNavegacion } from './navbar.component';
@@ -35,6 +35,8 @@ export class PanelPrincipalComponent implements OnInit {
   protected publicidadesRegistradas = signal<Publicidad[]>([]);
   protected empresaErrorMessage = signal('');
   protected publicidadErrorMessage = signal('');
+  protected empresaEditando = signal<Empresa | null>(null);
+  protected publicidadEditando = signal<Publicidad | null>(null);
 
   protected readonly todayLabel = new Intl.DateTimeFormat('es-CO', {
     weekday: 'long',
@@ -195,15 +197,31 @@ export class PanelPrincipalComponent implements OnInit {
     });
   }
 
-  // Crea una publicidad asociada a una empresa ya registrada.
-  // También normaliza fechas y calcula la duración para que la lista muestre datos consistentes.
+  protected iniciarEdicion(empresa: Empresa): void {
+    this.empresaEditando.set(empresa);
+    this.empresaErrorMessage.set('');
+  }
+
+  protected guardarEdicionEmpresa(event: { id: number; datos: Omit<Empresa, 'id'> }, formulario: FormularioEmpresaComponent): void {
+    this.empresaErrorMessage.set('');
+    this.empresaService.editarEmpresa(event.id, event.datos).subscribe({
+      next: () => {
+        this.empresaEditando.set(null);
+        formulario.clear();
+        this.empresaErrorMessage.set('');
+        this.cargarEmpresas();
+      },
+      error: (error) => {
+        const mensaje = error?.error?.mensaje ?? 'No fue posible actualizar la empresa.';
+        this.empresaErrorMessage.set(mensaje);
+        console.error('No fue posible actualizar la empresa.', error);
+      },
+    });
+  }
+
   protected agregarPublicidad(entrada: NuevaPublicidadEntrada, formulario: FormularioPublicidadComponent): void {
     const empresaSeleccionada = this.empresasRegistradas().find((empresa) => empresa.id === entrada.empresaId);
-
-    if (!empresaSeleccionada) {
-      return;
-    }
-
+    if (!empresaSeleccionada) return;
     this.publicidadErrorMessage.set('');
     this.publicidadService.crearPublicidad(entrada).subscribe({
       next: () => {
@@ -218,6 +236,47 @@ export class PanelPrincipalComponent implements OnInit {
         console.error('No fue posible guardar la publicidad.', error);
       },
     });
+  }
+
+  protected iniciarEdicionPublicidad(publicidad: Publicidad): void {
+    this.publicidadEditando.set(publicidad);
+    this.publicidadErrorMessage.set('');
+  }
+
+  protected guardarEdicionPublicidad(
+    event: { id: number; datos: EditarPublicidadEntrada; nuevoVideo?: File },
+    formulario: FormularioPublicidadComponent
+  ): void {
+    this.publicidadErrorMessage.set('');
+    // Si hay nuevo video, primero editar campos y luego subir video
+    this.publicidadService.editarPublicidad(event.id, event.datos).subscribe({
+      next: () => {
+        if (event.nuevoVideo) {
+          this.publicidadService.reemplazarVideo(event.id, event.nuevoVideo).subscribe({
+            next: () => { this.finalizarEdicionPublicidad(formulario); },
+            error: (error) => {
+              const mensaje = error?.error?.mensaje ?? 'No fue posible reemplazar el video.';
+              this.publicidadErrorMessage.set(mensaje);
+            },
+          });
+        } else {
+          this.finalizarEdicionPublicidad(formulario);
+        }
+      },
+      error: (error) => {
+        const mensaje = error?.error?.mensaje ?? 'No fue posible actualizar la publicidad.';
+        this.publicidadErrorMessage.set(mensaje);
+        console.error('No fue posible actualizar la publicidad.', error);
+      },
+    });
+  }
+
+  private finalizarEdicionPublicidad(formulario: FormularioPublicidadComponent): void {
+    this.publicidadEditando.set(null);
+    formulario.clear();
+    this.publicidadErrorMessage.set('');
+    this.cargarPublicidades();
+    this.cargarEmpresas();
   }
 
   private getPublicidadesVigentes(): Publicidad[] {
