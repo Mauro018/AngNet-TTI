@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using SistemaPublicidad.Net.Backend.Data;                     //Esto cambia de acuerdo al namespace que se este usando
@@ -48,6 +49,17 @@ builder.Services.AddSwaggerGen(c =>
         Version = "v1"
     });
 });
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 250 * 1024 * 1024; // 250 MB
+});
+
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 250 * 1024 * 1024; // 250 MB
+});
+
 
 // ============= CONFIGURACIÓN DEL PIPELINE =============
 

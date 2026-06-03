@@ -1,18 +1,74 @@
 // Lista tabular de las empresas registradas en el sistema.
 import { Component, EventEmitter, Input, Output, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Empresa } from '../shared/models/modelo-publicidad';
 
 @Component({
   selector: 'app-lista-empresas',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './lista-empresas.component.html',
   styleUrls: ['./lista-empresas.component.css'],
 })
 export class ListaEmpresasComponent {
   @Input() empresas: Empresa[] = [];
   @Output() editarEmpresa = new EventEmitter<Empresa>();
+
+  // ─── Opciones para el selector de sector ────────────────────
+  protected readonly sectoresIndustria = [
+    { value: 'TRANSPORTE',               label: 'Transporte' },
+    { value: 'TECNOLOGIA',               label: 'Tecnología' },
+    { value: 'SALUD',                    label: 'Salud' },
+    { value: 'GOBIERNO_E_INST_PUBLICAS', label: 'Gobierno e Inst. Públicas' },
+    { value: 'ALIMENTOS',                label: 'Alimentos' },
+    { value: 'COMERCIO',                 label: 'Comercio' },
+    { value: 'ASEO',                     label: 'Aseo' },
+    { value: 'FINANCIERO',               label: 'Financiero' },
+    { value: 'OTROS',                    label: 'Otros' },
+  ];
+
+  // ─── Estado de los filtros ──────────────────────────────────
+  buscarItem     = '';
+  seleccionarSector = '';
+  seleccionarEstado = '';
+
+  /** true si hay al menos un filtro activo → muestra el botón "Limpiar filtros" */
+  get hasActiveFilters(): boolean {
+    return !!(this.buscarItem.trim() || this.seleccionarSector || this.seleccionarEstado);
+  }
+
+  /**
+   * Lista con los 3 filtros aplicados.
+   * - Texto: busca en nombre, NIT, representante y cédula (sin distinción de mayúsculas).
+   * - Sector: coincidencia exacta con el valor enum.
+   * - Estado: coincidencia exacta ('Activa' | 'Inactiva').
+   * Una cadena vacía en sector/estado equivale a "sin filtro".
+   */
+  get filteredEmpresas(): Empresa[] {
+    const term = this.buscarItem.trim().toLowerCase();
+    return this.empresas.filter(e => {
+      const matchesSearch =
+        !term ||
+        e.nombre.toLowerCase().includes(term)         ||
+        e.nit.toLowerCase().includes(term)            ||
+        e.representante.toLowerCase().includes(term)  ||
+        e.cedula.toLowerCase().includes(term);
+
+      const matchesSector = !this.seleccionarSector || e.sectorIndustria === this.seleccionarSector;
+      const matchesEstado = !this.seleccionarEstado || e.estado          === this.seleccionarEstado;
+
+      return matchesSearch && matchesSector && matchesEstado;
+    });
+  }
+
+  clearFilters(): void {
+    this.buscarItem     = '';
+    this.seleccionarSector = '';
+    this.seleccionarEstado = '';
+    this.currentPage    = 1;
+  }
+
 
   // ---------------------- Paginación ------------------------------
   currentPage = 1;
@@ -26,23 +82,23 @@ export class ListaEmpresasComponent {
 
   /** Número total de páginas según el tamaño de la lista. */
   get totalPages(): number {
-    return Math.max(1, Math.ceil(this.empresas.length / this.itemsPerPage));
+    return Math.max(1, Math.ceil(this.filteredEmpresas.length / this.itemsPerPage));
   }
 
   /** Solo el trozo de la lista que corresponde a la página actual. */
   get paginatedEmpresas(): Empresa[] {
     const start = (this.currentPage - 1) * this.itemsPerPage;
-    return this.empresas.slice(start, start + this.itemsPerPage);
+    return this.filteredEmpresas.slice(start, start + this.itemsPerPage);
   }
 
   /** Primer registro visible en la página actual (para el texto "Mostrando X–Y"). */
   get startIndex(): number {
-    return this.empresas.length === 0 ? 0 : (this.currentPage - 1) * this.itemsPerPage + 1;
+    return this.filteredEmpresas.length === 0 ? 0 : (this.currentPage - 1) * this.itemsPerPage + 1;
   }
 
   /** Último registro visible en la página actual. */
   get endIndex(): number {
-    return Math.min(this.currentPage * this.itemsPerPage, this.empresas.length);
+    return Math.min(this.currentPage * this.itemsPerPage, this.filteredEmpresas.length);
   }
 
   /**

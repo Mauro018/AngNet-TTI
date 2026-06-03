@@ -116,6 +116,8 @@ public class PublicidadesController : ControllerBase
 
     [HttpPost]
     [Consumes("multipart/form-data")]
+    [RequestSizeLimit(250 * 1024 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 250 * 1024 * 1024)]
     public async Task<ActionResult<PublicidadRespuesta>> PostPublicidad(
         [FromForm] PublicidadCrearSolicitud request,
         IFormFile? video)

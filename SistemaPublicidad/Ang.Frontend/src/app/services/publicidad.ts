@@ -61,8 +61,8 @@ export class PublicidadService {
     formData.append('tipoPantalla', entrada.tipoPantalla);
     formData.append('duracionVideoSegundos', String(entrada.duracionVideoSegundos));
     formData.append('duracionMeses', String(entrada.duracionMeses));
-    formData.append('fechaInicio', new Date(`${entrada.fechaInicio}T00:00:00`).toISOString());
-    formData.append('fechaFin', new Date(`${entrada.fechaFin}T23:59:59`).toISOString());
+    formData.append('fechaInicio', entrada.fechaInicio);
+    formData.append('fechaFin', entrada.fechaFin);
     formData.append('observaciones', entrada.observaciones.trim());
     formData.append('video', entrada.video, entrada.video.name);
 
@@ -74,7 +74,7 @@ export class PublicidadService {
   editarPublicidad(id: number, datos: EditarPublicidadEntrada): Observable<Publicidad> {
     const body = {
       duracionMeses: datos.duracionMeses,
-      fechaInicio: new Date(`${datos.fechaInicio}T00:00:00`).toISOString(),
+      fechaInicio: datos.fechaInicio,
       observaciones: datos.observaciones.trim(),
     };
     return this.http.put<PublicidadApi>(`${this.apiUrl}/${id}`, body).pipe(

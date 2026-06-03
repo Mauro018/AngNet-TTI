@@ -1,8 +1,61 @@
 <section class="company-list-container">
   <header class="list-header">
     <h3>Empresas registradas</h3>
-    <span class="list-count">{{ empresas.length }} empresa{{ empresas.length !== 1 ? 's' : '' }}</span>
+    <span class="list-count">
+      <ng-container *ngIf="hasActiveFilters">{{ filteredEmpresas.length }} de </ng-container>
+      {{ empresas.length }} empresa{{ empresas.length !== 1 ? 's' : '' }}
+    </span>
   </header>
+
+  <!-- ─── BARRA DE FILTROS ──────────────────────────────────── -->
+  <div class="filters-bar">
+
+    <!-- Búsqueda de texto libre -->
+    <div class="filter-search">
+      <svg class="filter-search__icon" width="16" height="16" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        type="text"
+        class="filter-input"
+        placeholder="Buscar por nombre, NIT, representante o cédula…"
+        [(ngModel)]="buscarItem"
+        (ngModelChange)="currentPage = 1"
+        aria-label="Buscar empresa"
+      />
+    </div>
+
+    <!-- Selector de sector -->
+    <select
+      class="filter-select"
+      [(ngModel)]="seleccionarSector"
+      (ngModelChange)="currentPage = 1"
+      aria-label="Filtrar por sector"
+    >
+      <option value="">Todos los sectores</option>
+      <option *ngFor="let s of sectoresIndustria" [value]="s.value">{{ s.label }}</option>
+    </select>
+
+    <!-- Selector de estado -->
+    <select
+      class="filter-select"
+      [(ngModel)]="seleccionarEstado"
+      (ngModelChange)="currentPage = 1"
+      aria-label="Filtrar por estado"
+    >
+      <option value="">Todos los estados</option>
+      <option value="Activa">✓ Activa</option>
+      <option value="Inactiva">✕ Inactiva</option>
+    </select>
+
+    <!-- Botón limpiar (solo visible cuando hay filtros activos) -->
+    <button *ngIf="hasActiveFilters" class="filter-clear" (click)="clearFilters()" type="button">
+      Limpiar ✕
+    </button>
+
+  </div>
 
   <div class="list-wrapper">
     <div class="companies-table">
@@ -21,6 +74,14 @@
       <div *ngIf="empresas.length === 0" class="empty-state">
         <p>No hay empresas registradas aún.</p>
         <span>Usa el formulario anterior para crear la primera empresa.</span>
+      </div>
+
+      <!-- Estado vacío: los filtros no devuelven resultados -->
+      <div *ngIf="empresas.length > 0 && filteredEmpresas.length === 0" class="empty-state">
+        <p>Ninguna empresa coincide con los filtros.</p>
+        <span>Prueba con otros términos o
+          <button class="filter-link-btn" type="button" (click)="clearFilters()">limpia los filtros</button>.
+        </span>
       </div>
 
       <div *ngFor="let company of paginatedEmpresas" class="table-row">
@@ -62,7 +123,7 @@
   <nav *ngIf="totalPages > 1" class="pagination" aria-label="Paginación de empresas">
     <p class="pagination-info">
       Mostrando <strong>{{ startIndex }}–{{ endIndex }}</strong>
-      de <strong>{{ empresas.length }}</strong>
+      de <strong>{{ filteredEmpresas.length }}</strong>
       empresa{{ empresas.length !== 1 ? 's' : '' }}
     </p>
 
