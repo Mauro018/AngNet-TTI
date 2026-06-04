@@ -60,6 +60,7 @@ builder.Services.Configure<FormOptions>(options =>
     options.MultipartBodyLengthLimit = 250 * 1024 * 1024; // 250 MB
 });
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 // ============= CONFIGURACIÓN DEL PIPELINE =============
 
