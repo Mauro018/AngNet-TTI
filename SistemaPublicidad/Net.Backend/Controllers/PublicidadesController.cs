@@ -184,15 +184,15 @@ public class PublicidadesController : ControllerBase
         };
 
         _context.Publicidades.Add(publicidad);
+        publicidad.FechaInicio    = DateTime.SpecifyKind(publicidad.FechaInicio, DateTimeKind.Utc);
+        publicidad.FechaFin       = DateTime.SpecifyKind(publicidad.FechaFin, DateTimeKind.Utc);
+        publicidad.FechaCreacion  = DateTime.UtcNow; // Siempre UTC al crear
+
         try
-        {
-            publicidad.FechaInicio    = DateTime.SpecifyKind(publicidad.FechaInicio, DateTimeKind.Utc);
-            publicidad.FechaFin       = DateTime.SpecifyKind(publicidad.FechaFin, DateTimeKind.Utc);
-            publicidad.FechaCreacion  = DateTime.UtcNow; // Siempre UTC al crear
         {
             await _context.SaveChangesAsync();
         }
-        }
+        
         catch (DbUpdateException)
         {
             // Eliminar el video si la inserción falló

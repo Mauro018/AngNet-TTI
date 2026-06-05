@@ -231,7 +231,13 @@ export class PanelPrincipalComponent implements OnInit {
         this.cargarEmpresas();
       },
       error: (error) => {
-        const mensaje = error?.error?.mensaje ?? 'No fue posible guardar la publicidad.';
+        const errores = (error?.error?.errores ?? {}) as Record<string, string[] | string>;
+        const detalle = Object.keys(errores).length
+          ? Object.entries(errores)
+              .map(([campo, msgs]) => `${campo}: ${Array.isArray(msgs) ? msgs.join(', ') : String(msgs)}`)
+              .join(' | ')
+          : '';
+        const mensaje = error?.error?.mensaje ?? detalle ?? 'No fue posible guardar la publicidad.';
         this.publicidadErrorMessage.set(mensaje);
         console.error('No fue posible guardar la publicidad.', error);
       },

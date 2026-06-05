@@ -24,6 +24,27 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddControllers()
+    .ConfigureApiBehaviorOptions(options =>
+    {
+        // Devolver un JSON uniforme { mensaje, errores } en vez del ProblemDetails por defecto
+        options.InvalidModelStateResponseFactory = context =>
+        {
+            var errores = context.ModelState
+                .Where(kv => kv.Value?.Errors.Count > 0)
+                .ToDictionary(
+                    kv => kv.Key,
+                    kv => kv.Value!.Errors.Select(e => string.IsNullOrWhiteSpace(e.ErrorMessage)
+                        ? (e.Exception?.Message ?? "Valor inválido")
+                        : e.ErrorMessage).ToArray()
+                );
+
+            return new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(new
+            {
+                mensaje = "Los datos enviados no son válidos.",
+                errores
+            });
+        };
+    })
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
