@@ -191,6 +191,25 @@
 }
 
 /* ═══════════════════════════════════════════
+   BADGES DE ESTADO (base + variantes)
+═══════════════════════════════════════════ */
+
+/* Base sin la cual las variantes no tienen forma */
+.status-badge {
+  display: inline-block;
+  padding: 0.35rem 0.7rem;
+  border-radius: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* Publicidades vencidas (d < 0) — faltaba completamente */
+.status-badge--expired {
+  background: color-mix(in srgb, var(--surface-strong) 80%, #d22c34);
+  color: #8d1f28;
+}
+
+/* ═══════════════════════════════════════════
    PAGINACIÓN
 ═══════════════════════════════════════════ */
 .pagination {

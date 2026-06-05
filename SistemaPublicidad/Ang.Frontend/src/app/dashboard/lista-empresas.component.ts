@@ -11,7 +11,7 @@ import { Empresa } from '../shared/models/modelo-publicidad';
   templateUrl: './lista-empresas.component.html',
   styleUrls: ['./lista-empresas.component.css'],
 })
-export class ListaEmpresasComponent {
+export class ListaEmpresasComponent implements OnChanges {
   @Input() empresas: Empresa[] = [];
   @Output() editarEmpresa = new EventEmitter<Empresa>();
 
@@ -68,7 +68,6 @@ export class ListaEmpresasComponent {
     this.seleccionarEstado = '';
     this.currentPage    = 1;
   }
-
 
   // ---------------------- Paginación ------------------------------
   currentPage = 1;

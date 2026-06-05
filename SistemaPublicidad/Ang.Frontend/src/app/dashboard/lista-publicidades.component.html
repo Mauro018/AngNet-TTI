@@ -1,8 +1,61 @@
 <section class="publicity-list-container">
   <header class="list-header">
     <h3>Publicidades registradas</h3>
-    <span class="list-count">{{ publicidades.length }} publicidad{{ publicidades.length !== 1 ? 'es' : '' }}</span>
+    <span class="list-count">
+      <ng-container *ngIf="hasActiveFilters">{{ filteredPublicidades.length }} de </ng-container>
+      {{ filteredPublicidades.length }} publicidad{{ filteredPublicidades.length !== 1 ? 'es' : '' }}
+    </span>
   </header>
+
+  <!-- ─── BARRA DE FILTROS ──────────────────────────────────── -->
+  <div class="filters-bar">
+
+    <!-- Búsqueda de texto libre -->
+    <div class="filter-search">
+      <svg class="filter-search__icon" width="16" height="16" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        type="text"
+        class="filter-input"
+        placeholder="Buscar por nombre de publicidad o empresa..."
+        [(ngModel)]="buscarItem"
+        (ngModelChange)="currentPage = 1"
+        aria-label="Buscar nombre de publicidad o empresa"
+      />
+    </div>
+
+    <!-- Selector de meses -->
+    <select
+      class="filter-select"
+      [(ngModel)]="seleccionarMeses"
+      (ngModelChange)="currentPage = 1"
+      aria-label="Filtrar por meses"
+    >
+      <option value="">Todos los meses</option>
+      <option *ngFor="let m of opcionesDuracionMeses" [value]="m.value">{{ m.label }}</option>
+    </select>
+
+    <!-- Selector de segundos -->
+    <select
+      class="filter-select"
+      [(ngModel)]="seleccionarSegundos"
+      (ngModelChange)="currentPage = 1"
+      aria-label="Filtrar por segundos"
+    >
+      <option value="">Todos los segundos</option>
+      <option *ngFor="let s of opcionesDuracionSegundos" [value]="s.value">{{ s.label }}</option>
+    </select>
+
+    <!-- Botón limpiar (solo visible cuando hay filtros activos) -->
+    <button *ngIf="hasActiveFilters" class="filter-clear" (click)="clearFilters()" type="button">
+      Limpiar ✕
+    </button>
+
+  </div>
+  <!-- ──────────────────────────────────────────────────────── -->
 
   <div class="list-wrapper">
     <div class="publicities-table">
@@ -19,6 +72,14 @@
       <div *ngIf="publicidades.length === 0" class="empty-state">
         <p>No hay publicidades registradas aún.</p>
         <span>Usa el formulario para agregar la primera publicidad.</span>
+      </div>
+
+      <!-- Estado vacío: los filtros no devuelven resultados -->
+      <div *ngIf="publicidades.length > 0 && filteredPublicidades.length === 0" class="empty-state">
+        <p>Ninguna publicidad coincide con los filtros.</p>
+        <span>Prueba con otros términos o
+          <button class="filter-link-btn" type="button" (click)="clearFilters()">limpia los filtros</button>.
+        </span>
       </div>
 
       <div *ngFor="let pub of paginacionPublicidades" class="table-row">
@@ -64,7 +125,7 @@
   </div>
 
   <!-- ─── PAGINACIÓN (solo aparece si hay más de 1 página) ─── -->
-   <nav *ngIf="totalPages > 1" class="pagination" aria-label="Paginación de empresas">
+   <nav *ngIf="totalPages > 1" class="pagination" aria-label="Paginación de publicidades">
     <p class="pagination-info">
       Mostrando <strong>{{ startIndex }}–{{ endIndex }}</strong>
       de <strong>{{ publicidades.length }}</strong>

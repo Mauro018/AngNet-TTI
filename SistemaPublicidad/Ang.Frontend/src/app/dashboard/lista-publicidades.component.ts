@@ -1,52 +1,114 @@
-﻿// Lista de publicidades registradas con control visual de vencimiento.
+// Lista de publicidades registradas con control visual de vencimiento.
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, OnChanges } from '@angular/core';
-
+import { FormsModule } from '@angular/forms';
 import { Publicidad } from '../shared/models/modelo-publicidad';
 import { PublicidadService } from '../services/publicidad';
 
 @Component({
   selector: 'app-lista-publicidades',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './lista-publicidades.component.html',
   styleUrls: ['./lista-publicidades.component.css'],
 })
-export class ListaPublicidadesComponent {
+export class ListaPublicidadesComponent implements OnChanges {
   @Input() publicidades: Publicidad[] = [];
   @Output() editarPublicidad = new EventEmitter<Publicidad>();
+
+  // ─── Opciones para el selector de tiempo en meses ────────────────────
+  protected readonly opcionesDuracionMeses = [
+    { value: 1, label: '1 mes' },
+    { value: 2, label: '2 meses' },
+    { value: 3, label: '3 meses' },
+    { value: 4, label: '4 meses' },
+    { value: 5, label: '5 meses' },
+    { value: 6, label: '6 meses' },
+    { value: 7, label: '7 meses' },
+    { value: 8, label: '8 meses' },
+    { value: 9, label: '9 meses' },
+    { value: 10, label: '10 meses' },
+    { value: 11, label: '11 meses' },
+    { value: 12, label: '12 meses' },
+  ];
+
+  // ─── Opciones para el selector de tiempo en segundos ────────────────────
+  protected readonly opcionesDuracionSegundos = [
+    { value: 10, label: '10 segundos' },
+    { value: 15, label: '15 segundos' },
+    { value: 20, label: '20 segundos' },
+    { value: 25, label: '25 segundos' },
+    { value: 30, label: '30 segundos' },
+  ];
+
+  // ─── Estado de los filtros ──────────────────────────────────
+  buscarItem     = '';
+  seleccionarMeses = '';
+  seleccionarSegundos = '';
+
+  /** true si hay al menos un filtro activo → muestra el botón "Limpiar filtros" */
+  get hasActiveFilters(): boolean {
+    return !!(this.buscarItem.trim() || this.seleccionarMeses || this.seleccionarSegundos);
+  }
+
+  /** Lista con los 3 filtros aplicados.
+   * - Texto: busca en nombre publicidad, nombre empresa (sin distinción de mayúsculas).
+   * - Meses: coincidencia exacta con el valor numérico de meses.
+   * - Segundos: coincidencia exacta con el valor numérico de segundos.
+   * Una cadena vacía en meses/segundos equivale a "sin filtro". */
+  get filteredPublicidades(): Publicidad[] {
+    const term = this.buscarItem.trim().toLowerCase();
+    return this.publicidades.filter(p => {
+      const matchesSearch =
+        !term ||
+        p.nombrePublicidad.toLowerCase().includes(term) ||
+        p.empresaNombre.toLowerCase().includes(term);
+
+      const matchesMeses = !this.seleccionarMeses || p.duracionMeses === +this.seleccionarMeses;
+      const matchesSegundos = !this.seleccionarSegundos || p.duracionVideoSegundos === +this.seleccionarSegundos;
+
+      return matchesSearch && matchesMeses && matchesSegundos;
+    });
+  }
+
+  clearFilters(): void {
+    this.buscarItem     = '';
+    this.seleccionarMeses = '';
+    this.seleccionarSegundos = '';
+    this.currentPage    = 1;
+  }
 
   // ---------------------- Paginación ------------------------------
   currentPage = 1;
     readonly itemsPerPage = 10;
-  
+
     /** Se ejecuta cada vez que el @Input `publicidades` cambia.
      *  Vuelve a la página 1 para no quedar en una página vacía. */
     ngOnChanges(): void {
       this.currentPage = 1;
     }
-  
+
     /** Número total de páginas según el tamaño de la lista. */
     get totalPages(): number {
-      return Math.max(1, Math.ceil(this.publicidades.length / this.itemsPerPage));
+      return Math.max(1, Math.ceil(this.filteredPublicidades.length / this.itemsPerPage));
     }
-  
+
     /** Solo el trozo de la lista que corresponde a la página actual. */
     get paginacionPublicidades(): Publicidad[] {
       const start = (this.currentPage - 1) * this.itemsPerPage;
-      return this.publicidades.slice(start, start + this.itemsPerPage);
+      return this.filteredPublicidades.slice(start, start + this.itemsPerPage);
     }
-  
+
     /** Primer registro visible en la página actual (para el texto "Mostrando X–Y"). */
     get startIndex(): number {
-      return this.publicidades.length === 0 ? 0 : (this.currentPage - 1) * this.itemsPerPage + 1;
+      return this.filteredPublicidades.length === 0 ? 0 : (this.currentPage - 1) * this.itemsPerPage + 1;
     }
-  
+
     /** Último registro visible en la página actual. */
     get endIndex(): number {
-      return Math.min(this.currentPage * this.itemsPerPage, this.publicidades.length);
+      return Math.min(this.currentPage * this.itemsPerPage, this.filteredPublicidades.length);
     }
-  
+
     /**
      * Genera el array de botones del paginador.
      * `null` representa "…" (puntos suspensivos) para saltos grandes.
@@ -62,9 +124,9 @@ export class ListaPublicidadesComponent {
       if (total <= 7) {
         return Array.from({ length: total }, (_, i) => i + 1);
       }
-  
+
       const cur = this.currentPage;
-  
+
       if (cur <= 4) {
         return [1, 2, 3, 4, 5, null, total];
       }
@@ -73,13 +135,13 @@ export class ListaPublicidadesComponent {
       }
       return [1, null, cur - 1, cur, cur + 1, null, total];
     }
-  
+
     goToPage(page: number): void {
       if (page >= 1 && page <= this.totalPages) {
         this.currentPage = page;
       }
     }
-  
+
     prevPage(): void { this.goToPage(this.currentPage - 1); }
     nextPage(): void { this.goToPage(this.currentPage + 1); }
 
