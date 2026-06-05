@@ -36,11 +36,11 @@ export class FormularioEmpresaComponent implements OnChanges {
 
   protected readonly form = this.formBuilder.nonNullable.group({
     nombre:          ['', [Validators.required, Validators.minLength(3)]],
-    nit:             ['', [Validators.required, Validators.pattern(/^\d{9,}$/)]],
+    nit:             ['', [Validators.required, Validators.pattern(/^\d{9}$/)]],
     representante:   ['', [Validators.required, Validators.minLength(2)]],
-    cedula:          ['', [Validators.required, Validators.pattern(/^\d{5,}$/)]],
+    cedula:          ['', [Validators.required, Validators.pattern(/^\d{7,10}$/)]],
     sectorIndustria: ['OTROS' as SectorIndustriaEmpresa, Validators.required],
-    telefono:        ['', [Validators.required, Validators.pattern(/^\d{7,}$/)]],
+    telefono:        ['', [Validators.required, Validators.pattern(/^\d{10}$/)]],
     correo:          ['', [Validators.required, Validators.email]],
     estado:          ['Activa', Validators.required],
   });
@@ -135,9 +135,9 @@ export class FormularioEmpresaComponent implements OnChanges {
     if (control.errors['minlength']) return `Mínimo ${control.errors['minlength'].requiredLength} caracteres.`;
     if (control.errors['email'])     return 'Correo electrónico inválido.';
     if (control.errors['pattern']) {
-      if (controlName === 'cedula')   return 'La cédula debe tener al menos 5 dígitos.';
-      if (controlName === 'nit')      return 'El NIT debe tener al menos 9 dígitos.';
-      return 'Teléfono debe tener al menos 7 dígitos.';
+      if (controlName === 'cedula')   return 'La cédula debe tener entre 7 y 10 dígitos.';
+      if (controlName === 'nit')      return 'El NIT debe tener 9 dígitos.';
+      if (controlName === 'telefono') return 'El teléfono debe tener 10 dígitos.';
     }
 
     return 'Campo inválido.';

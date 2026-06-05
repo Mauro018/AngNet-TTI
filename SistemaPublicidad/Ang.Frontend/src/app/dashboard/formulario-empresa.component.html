@@ -31,7 +31,8 @@
           type="text"
           formControlName="nit"
           appInputFilter="numeric"
-          placeholder="Ej. 811000123456789"
+          maxlength="9"
+          placeholder="Ej. 811000123"
           [class.form-group__input--error]="isInvalid('nit')"
         />
         <span class="form-group__error" *ngIf="isInvalid('nit')">
@@ -78,6 +79,7 @@
           type="text"
           formControlName="cedula"
           appInputFilter="numeric"
+          maxlength="10"
           placeholder="Ej. 1056789123"
           [class.form-group__input--error]="isInvalid('cedula')"
         />
@@ -93,7 +95,8 @@
           type="tel"
           formControlName="telefono"
           appInputFilter="numeric"
-          placeholder="Ej. 8760123456"
+          maxlength="10"
+          placeholder="Ej. 3124567890"
           [class.form-group__input--error]="isInvalid('telefono')"
         />
         <span class="form-group__error" *ngIf="isInvalid('telefono')">

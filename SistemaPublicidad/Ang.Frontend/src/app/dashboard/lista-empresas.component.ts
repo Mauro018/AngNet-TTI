@@ -162,4 +162,18 @@ export class ListaEmpresasComponent implements OnChanges {
     };
     return labels[sector] ?? sector;
   }
+
+  /** Formatea el teléfono: 3123456789 → (312) 345 6789 */
+  protected formatTelefono(phone: string): string {
+    const d = phone.replace(/\D/g, '');
+    if (d.length !== 10) return phone; // fallback si el número no tiene 10 dígitos
+    return `(${d.slice(0, 3)}) ${d.slice(3, 6)} ${d.slice(6)}`;
+  }
+
+  /** Formatea el NIT: 123456789 → 123.456.789 */
+  protected formatNit(nit: string): string {
+    const d = nit.replace(/\D/g, '');
+    if (d.length !== 9) return nit; // fallback si el NIT no tiene 9 dígitos
+    return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
+  }
 }

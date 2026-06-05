@@ -90,7 +90,7 @@
           <strong>{{ company.nombre }}</strong>
         </div>
         <div class="table-cell table-cell--nit" data-label="NIT">
-          {{ company.nit }}
+          {{ formatNit(company.nit) }}
         </div>
         <div class="table-cell table-cell--sector" data-label="Sector">
           {{ getSectorLabel(company.sectorIndustria) }}
@@ -100,7 +100,7 @@
           <span class="cedula-label">CC {{ company.cedula }}</span>
         </div>
         <div class="table-cell table-cell--phone" data-label="Teléfono">
-          <a [href]="'tel:' + company.telefono" class="phone-link">{{ company.telefono }}</a>
+          <a [href]="'tel:' + company.telefono" class="phone-link">{{ formatTelefono(company.telefono) }}</a>
         </div>
         <div class="table-cell table-cell--email" data-label="Correo">
           <a [href]="'mailto:' + company.correo" class="email-link">{{ company.correo }}</a>
