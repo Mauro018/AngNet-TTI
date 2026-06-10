@@ -65,21 +65,21 @@
           "builder": "@angular/build:dev-server",
           "defaultConfiguration": "development",
           "options": {
-            "allowedHosts": [
-              "85zbh2tp-4200.use2.devtunnels.ms"
-            ]
+            "host": "0.0.0.0",
+            "port": 4200,
+            "allowedHosts": ["192.168.1.105", "localhost", ".local"]
           },
           "configurations": {
-            "production": {
-              "buildTarget": "angular-01:build:production"
-            },
             "development": {
               "buildTarget": "angular-01:build:development"
+            },
+            "production": {
+              "buildTarget": "angular-01:build:production"
             }
           }
         },
         "test": {
-          "builder": "@angular/build:unit-test"
+          "builder": "@angular-devkit/build-angular:karma"
         }
       }
     }

@@ -16,6 +16,8 @@
           />
         </div>
       </section>
+
+      <app-vista-previa-en-vivo></app-vista-previa-en-vivo>
     </section>
   } @else if (seccionActiva() === 'Empresas') {
     <section class="workspace companies-view">
@@ -61,6 +63,8 @@
           (editarPublicidad)="iniciarEdicionPublicidad($event)"
         />
       </div>
+
+      <app-vista-previa-en-vivo></app-vista-previa-en-vivo>
     </section>
   } @else {
     <section class="workspace workspace--placeholder">

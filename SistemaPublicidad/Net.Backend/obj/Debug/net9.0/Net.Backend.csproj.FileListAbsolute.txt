@@ -246,3 +246,5 @@ C:\Users\Asist\Documents\AngNet-TTI\SistemaPublicidad\Net.Backend\obj\Debug\net9
 C:\Users\Asist\Documents\AngNet-TTI\SistemaPublicidad\Net.Backend\obj\Debug\net9.0\Net.Backend.pdb
 C:\Users\Asist\Documents\AngNet-TTI\SistemaPublicidad\Net.Backend\obj\Debug\net9.0\Net.Backend.genruntimeconfig.cache
 C:\Users\Asist\Documents\AngNet-TTI\SistemaPublicidad\Net.Backend\obj\Debug\net9.0\ref\Net.Backend.dll
+C:\Users\Asist\Documents\AngNet-TTI\SistemaPublicidad\Net.Backend\bin\Debug\net9.0\Newtonsoft.Json.dll
+C:\Users\Asist\Documents\AngNet-TTI\SistemaPublicidad\Net.Backend\bin\Debug\net9.0\System.Net.WebSockets.WebSocketProtocol.dll

@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
-import { PanelPrincipalComponent } from './dashboard/panel-principal.component';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [PanelPrincipalComponent],
+  imports: [RouterOutlet],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

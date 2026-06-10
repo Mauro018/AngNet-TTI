@@ -1,0 +1,88 @@
+<section class="vista-previa">
+  <header class="vista-previa__encabezado">
+    <div>
+      <h3>Vista previa en vivo</h3>
+      <p>Visualiza en tiempo real las publicidades que se están mostrando en cada pantalla.</p>
+    </div>
+    <div class="vista-previa__controles">
+      <div class="vista-previa__tipos" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          [class.activo]="tipoSeleccionado() === 'VerticalSamsung'"
+          (click)="seleccionarTipo('VerticalSamsung')"
+        >
+          Vertical
+        </button>
+        <button
+          type="button"
+          role="tab"
+          [class.activo]="tipoSeleccionado() === 'HorizontalDescenso'"
+          (click)="seleccionarTipo('HorizontalDescenso')"
+        >
+          Horizontal
+        </button>
+      </div>
+      <button
+        *ngIf="!reproduciendo(); else botonPausar"
+        type="button"
+        class="vista-previa__iniciar"
+        (click)="iniciar()"
+      >
+        ▶ Iniciar vista previa
+      </button>
+      <ng-template #botonPausar>
+        <button type="button" class="vista-previa__pausar" (click)="pausar()">❚❚ Pausar</button>
+      </ng-template>
+    </div>
+  </header>
+
+  <div class="vista-previa__cuerpo" [class.vista-previa__cuerpo--horizontal]="tipoSeleccionado() === 'HorizontalDescenso'">
+    <div class="vista-previa__reproductor">
+      <ng-container *ngIf="actual() as pub; else vacio">
+        <video
+          #reproductorActual
+          class="vista-previa__video"
+          autoplay
+          muted
+          playsinline
+          (ended)="siguiente()"
+          (error)="siguiente()"
+        ></video>
+        <div class="vista-previa__pie">
+          <strong>{{ pub.nombrePublicidad }}</strong>
+          <span>{{ pub.empresaNombre }}</span>
+        </div>
+        <div *ngIf="requiereInteraccion()" class="vista-previa__interaccion">
+          <button type="button" (click)="iniciar()">Permitir reproducción</button>
+        </div>
+      </ng-container>
+      <ng-template #vacio>
+        <div class="vista-previa__vacio">
+          <p>{{ mensaje() }}</p>
+          <small>Las publicidades se actualizan automáticamente cuando se crean, editan o vencen.</small>
+        </div>
+      </ng-template>
+    </div>
+
+    <aside class="vista-previa__lista">
+      <h4>Cola de reproducción ({{ publicidades().length }})</h4>
+      <p class="vista-previa__lista-vacia" *ngIf="publicidades().length === 0">
+        No hay publicidades vigentes para mostrar.
+      </p>
+      <ul>
+        <li
+          *ngFor="let pub of publicidades()"
+          [class.activo]="pub.id === actual()?.id"
+        >
+          <span class="vista-previa__indice">#{{ pub.id }}</span>
+          <div class="vista-previa__info">
+            <strong>{{ pub.nombrePublicidad }}</strong>
+            <span>{{ pub.empresaNombre }}</span>
+            <small>Vigente hasta {{ pub.fechaFin }}</small>
+          </div>
+        </li>
+      </ul>
+    </aside>
+  </div>
+</section>

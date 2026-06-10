@@ -12,6 +12,7 @@ import { FormularioEmpresaComponent } from './formulario-empresa.component';
 import { ListaEmpresasComponent } from './lista-empresas.component';
 import { FormularioPublicidadComponent } from './formulario-publicidad.component';
 import { ListaPublicidadesComponent } from './lista-publicidades.component';
+import { VistaPreviaEnVivoComponent } from '../vista-previa/vista-previa.component';
 
 @Component({
   selector: 'app-panel-principal',
@@ -25,6 +26,7 @@ import { ListaPublicidadesComponent } from './lista-publicidades.component';
     ListaEmpresasComponent,
     FormularioPublicidadComponent,
     ListaPublicidadesComponent,
+    VistaPreviaEnVivoComponent,
   ],
   templateUrl: './panel-principal.component.html',
   styleUrls: ['./panel-principal.component.css'],

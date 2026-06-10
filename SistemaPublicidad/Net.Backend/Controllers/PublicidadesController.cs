@@ -1,13 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SistemaPublicidad.Net.Backend.Data;
 using SistemaPublicidad.Net.Backend.Dtos;
+using SistemaPublicidad.Net.Backend.Hubs;
 using SistemaPublicidad.Net.Backend.Models;
 
 [ApiController]
 [Route("api/[controller]")]
 public class PublicidadesController : ControllerBase
 {
+    private readonly IHubContext<HubPantallas> _hubPantallas;
     private static readonly HashSet<int> DuracionesVideoPermitidas = new() { 10, 15, 20, 25, 30 };
     private static readonly HashSet<string> TiposPantallaPermitidos = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -20,13 +23,54 @@ public class PublicidadesController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly IWebHostEnvironment _env;
 
-    public PublicidadesController(ApplicationDbContext context, IWebHostEnvironment env)
+    public PublicidadesController(ApplicationDbContext context, IWebHostEnvironment env, IHubContext<HubPantallas> hubPantallas)
     {
         _context = context;
         _env = env;
+        _hubPantallas = hubPantallas;
     }
 
     private string VideosPath => Path.Combine(_env.ContentRootPath, "Videos");
+
+    // GET: api/publicidades/vigentes?tipoPantalla=VerticalSamsung
+    // Devuelve únicamente las publicidades cuya fecha de inicio ya comenzó,
+    // que aún no han vencido y que tienen un video asociado. Es la fuente
+    // de datos que consumen el player y la vista previa en vivo.
+    [HttpGet("vigentes")]
+    public async Task<ActionResult<IEnumerable<PublicidadVigenteRespuesta>>> ObtenerVigentes([FromQuery] string? tipoPantalla)
+    {
+        var ahora = DateTime.UtcNow;
+        var consulta = _context.Publicidades
+            .AsNoTracking()
+            .Include(p => p.Empresa)
+            .Where(p => p.FechaInicio <= ahora
+                        && p.FechaFin >= ahora
+                        && p.VideoNombreArchivo != null
+                        && p.VideoNombreArchivo != string.Empty);
+
+        if (!string.IsNullOrWhiteSpace(tipoPantalla))
+        {
+            consulta = consulta.Where(p => p.TipoPantalla == tipoPantalla);
+        }
+
+        var respuesta = await consulta
+            .OrderBy(p => p.Id)
+            .Select(p => new PublicidadVigenteRespuesta
+            {
+                Id = p.Id,
+                EmpresaId = p.EmpresaId,
+                EmpresaNombre = p.Empresa != null ? p.Empresa.Nombre : string.Empty,
+                NombrePublicidad = p.NombrePublicidad,
+                TipoPantalla = p.TipoPantalla,
+                DuracionVideoSegundos = p.DuracionVideoSegundos,
+                FechaInicio = p.FechaInicio.ToString("yyyy-MM-dd"),
+                FechaFin = p.FechaFin.ToString("yyyy-MM-dd"),
+                UrlVideo = $"/api/publicidades/{p.Id}/video",
+            })
+            .ToListAsync();
+
+        return respuesta;
+    }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<PublicidadRespuesta>>> GetPublicidades()
@@ -202,6 +246,13 @@ public class PublicidadesController : ControllerBase
         }
 
         publicidad.Empresa = empresa;
+
+        // Notificar a las pantallas del tipo correspondiente que hay una nueva
+        // publicidad vigente (o próxima a estarlo) para que la incluyan en vivo.
+        await _hubPantallas.Clients
+            .Group(publicidad.TipoPantalla)
+            .SendAsync("RefrescarVigentes", publicidad.TipoPantalla);
+
         return CreatedAtAction(nameof(GetPublicidad), new { id = publicidad.Id }, MapToResponse(publicidad));
     }
 
@@ -292,5 +343,30 @@ public class PublicidadesController : ControllerBase
             Observaciones = publicidad.Descripcion,
             VideoNombreArchivo = publicidad.VideoNombreArchivo,
         };
+    }
+
+    [HttpPost("upload")]
+    public async Task<IActionResult> Upload(IFormFile video)
+    {
+        if (video == null) return BadRequest();
+
+        var fileName = Guid.NewGuid() + Path.GetExtension(video.FileName);
+        var path = Path.Combine("wwwroot/uploads", fileName);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+
+        using (var stream = new FileStream(path, FileMode.Create))
+            await video.CopyToAsync(stream);
+
+        var videoUrl = $"/uploads/{fileName}";
+
+        //Notificar a las pantallas
+        var hubContext = HttpContext.RequestServices.GetRequiredService<Microsoft.AspNetCore.SignalR.IHubContext<ScreenHub>>();
+        await hubContext.Clients.All.SendAsync("ReceiveNewVideo", new
+        {
+            url = videoUrl,
+            name = video.FileName,
+        });
+
+        return Ok(new { url = videoUrl });
     }
 }

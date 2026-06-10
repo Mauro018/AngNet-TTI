@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using SistemaPublicidad.Net.Backend.Data;                     //Esto cambia de acuerdo al namespace que se este usando
+using SistemaPublicidad.Net.Backend.Hubs;
+using SistemaPublicidad.Net.Backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,11 +14,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // CORS - Permite las solicitudes para que Angular se pueda comunicar con el backend
+// y para que SignalR pueda negociar y transferir mensajes entre clientes.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("http://localhost:4200")
+        policy.SetIsOriginAllowed(_ => true)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -81,6 +84,12 @@ builder.Services.Configure<FormOptions>(options =>
     options.MultipartBodyLengthLimit = 250 * 1024 * 1024; // 250 MB
 });
 
+builder.Services.AddSignalR();
+
+// Servicio en segundo plano que detecta cuando una publicidad vence y
+// notifica a las pantallas y a la vista previa para que la retiren.
+builder.Services.AddHostedService<ServicioVencimientoPublicidades>();
+
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 // ============= CONFIGURACIÓN DEL PIPELINE =============
@@ -106,5 +115,10 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.MapHub<HubPantallas>("/hubpantallas");
+
+app.UseStaticFiles();
+app.UseRouting();
 
 app.Run();
