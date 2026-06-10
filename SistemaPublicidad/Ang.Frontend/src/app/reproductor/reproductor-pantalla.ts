@@ -4,13 +4,15 @@ import {
   HostListener,
   OnDestroy,
   OnInit,
+  PLATFORM_ID,
   ViewChild,
+  afterNextRender,
   inject,
   signal,
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
-import { PLATFORM_ID } from '@angular/core';
+import { Subscription } from 'rxjs';
 
 import { PublicidadVigente, TipoPantallaPublicidad } from '../shared/models/modelo-publicidad-vigente';
 import { ServicioPublicidadesVigentes } from '../services/servicio-publicidades-vigentes';
@@ -46,6 +48,9 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
   private readonly signalr = inject(ServicioPantallasSignalR);
   private readonly platformId = inject(PLATFORM_ID);
 
+  private readonly plataformaBrowser = isPlatformBrowser(this.platformId);
+  private readonly subscripciones = new Subscription();
+
   /** Tipo de pantalla recibido por la URL. */
   protected readonly tipoPantalla = signal<TipoPantallaPublicidad>('VerticalSamsung');
 
@@ -60,51 +65,63 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
 
   async ngOnInit(): Promise<void>
   {
-    const tipo = (this.ruta.snapshot.paramMap.get('tipoPantalla') ?? 'VerticalSamsung') as TipoPantallaPublicidad;
+    const tipo = (this.ruta.snapshot.paramMap.get('tipoPantalla') ?? this.ruta.snapshot.queryParamMap.get('tipo') ?? 'VerticalSamsung') as TipoPantallaPublicidad;
     this.tipoPantalla.set(tipo);
     this.identificadorPantalla.set(`Pantalla ${tipo} ${new Date().toLocaleTimeString('es-CO')}`);
 
-    // Suscribirse al grupo del hub correspondiente a este tipo de pantalla.
-    await this.signalr.unirAPantalla(this.tipoPantalla());
-
-    // Listeners del hub (tipados con any para mantener compatibilidad con versiones de @microsoft/signalr).
-    this.signalr.on<{ tipoPantalla: string; publicidadId: number }>('PublicidadRemovida', (payload) =>
+    // afterNextRender garantiza que la vista ya esté lista en el cliente
+    // y evita intentar reproducir audio/video durante el SSR.
+    afterNextRender(async () =>
     {
-      if (!payload) return;
-      if (payload.tipoPantalla && payload.tipoPantalla !== this.tipoPantalla()) return;
-      this.cola.update((lista) => lista.filter((p) => p.id !== payload.publicidadId));
-      if (this.actual()?.id === payload.publicidadId)
-      {
-        // Pasa al siguiente. Si no hay, muestra mensaje.
-        this.siguiente();
-      }
-    });
+      // Suscribirse al grupo del hub correspondiente a este tipo de pantalla.
+      try { await this.signalr.unirAPantalla(this.tipoPantalla()); } catch { /* sin acciones */ }
 
-    this.signalr.on<string>('RefrescarVigentes', (tipo) =>
-    {
-      if (tipo && tipo !== this.tipoPantalla()) return;
+      // Listeners del hub.
+      this.subscripciones.add(
+        this.signalr.publicidadRemovida$.subscribe((payload) =>
+        {
+          if (!payload) return;
+          if (payload.tipoPantalla && payload.tipoPantalla !== this.tipoPantalla()) return;
+          this.cola.update((lista) => lista.filter((p) => p.id !== payload.publicidadId));
+          if (this.actual()?.id === payload.publicidadId)
+          {
+            this.siguiente();
+          }
+        })
+      );
+
+      this.subscripciones.add(
+        this.signalr.refrescarVigentes$.subscribe((tipo) =>
+        {
+          if (tipo && tipo !== this.tipoPantalla()) return;
+          this.cargarVigentes();
+        })
+      );
+
+      this.subscripciones.add(
+        this.signalr.publicidadNueva$.subscribe(() =>
+        {
+          this.cargarVigentes();
+        })
+      );
+
       this.cargarVigentes();
     });
-
-    this.signalr.on<unknown>('PublicidadNueva', () =>
-    {
-      this.cargarVigentes();
-    });
-
-    this.cargarVigentes();
   }
 
   ngOnDestroy(): void
   {
-    this.signalr.off('PublicidadRemovida');
-    this.signalr.off('RefrescarVigentes');
-    this.signalr.off('PublicidadNueva');
-    this.signalr.desunirDePantalla(this.tipoPantalla());
+    this.subscripciones.unsubscribe();
+    if (isPlatformBrowser(this.platformId))
+    {
+      this.signalr.desunirDePantalla(this.tipoPantalla());
+    }
   }
 
   /** Recarga la lista de publicidades vigentes desde el backend. */
   private cargarVigentes(): void
   {
+    if (!isPlatformBrowser(this.platformId)) return;
     this.servicioVigentes.obtenerVigentes(this.tipoPantalla()).subscribe({
       next: (lista) =>
       {

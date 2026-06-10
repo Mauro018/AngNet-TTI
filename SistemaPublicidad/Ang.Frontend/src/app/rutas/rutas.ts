@@ -30,11 +30,11 @@ export const rutas: Routes = [
 ];
 
 /**
- * Variante de las rutas usada por SSR. Las rutas que no se pueden
- * pre-renderizar (porque dependen de SignalR o del navegador) se
- * fuerzan a renderMode 'client'.
+ * Variante de las rutas usada por SSR. Solo se prerenderiza la ruta raíz
+ * (Panel principal). El resto se renderiza en el navegador porque dependen
+ * de la conexión con el backend (SignalR / HTTP).
  */
-export const rutasServidor: ServerRoute[] = rutas.map((ruta) => ({
-  ...(ruta as object),
-  renderMode: RenderMode.Client,
-})) as ServerRoute[];
+export const rutasServidor: ServerRoute[] = [
+  { path: '', renderMode: RenderMode.Prerender },
+  { path: '**', renderMode: RenderMode.Client },
+];

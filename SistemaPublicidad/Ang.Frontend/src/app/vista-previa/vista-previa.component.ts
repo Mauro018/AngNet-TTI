@@ -3,16 +3,18 @@ import {
   ElementRef,
   OnDestroy,
   OnInit,
+  PLATFORM_ID,
   ViewChild,
+  afterNextRender,
   inject,
   signal,
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { PLATFORM_ID } from '@angular/core';
 
 import { PublicidadVigente, TipoPantallaPublicidad } from '../shared/models/modelo-publicidad-vigente';
 import { ServicioPublicidadesVigentes } from '../services/servicio-publicidades-vigentes';
 import { ServicioPantallasSignalR } from '../services/servicio-pantallas-signalr';
+import { Subscription } from 'rxjs';
 
 /**
  * Vista previa en vivo que muestra, dentro del dashboard, los videos
@@ -59,17 +61,24 @@ export class VistaPreviaEnVivoComponent implements OnInit, OnDestroy
   protected readonly requiereInteraccion = signal<boolean>(false);
 
   private intervaloRotacion?: number;
-  private listenersRegistrados = false;
+  private readonly subscripciones = new Subscription();
 
-  async ngOnInit(): Promise<void>
+  ngOnInit(): void
   {
-    // Se suscribe a AMBOS grupos del hub para mantenerse al día con cualquier cambio.
-    for (const tipo of this.tiposPantalla)
+    if (!isPlatformBrowser(this.platformId)) return;
+
+    // afterNextRender asegura que la vista exista en el navegador y
+    // evita el error "Injector has already been destroyed" durante SSR.
+    afterNextRender(async () =>
     {
-      try { await this.signalr.unirAPantalla(tipo); } catch { /* sin acciones */ }
-    }
-    this.registrarListeners();
-    this.cargar();
+      // Se suscribe a AMBOS grupos del hub para mantenerse al día con cualquier cambio.
+      for (const tipo of this.tiposPantalla)
+      {
+        try { await this.signalr.unirAPantalla(tipo); } catch { /* sin acciones */ }
+      }
+      this.registrarListeners();
+      this.cargar();
+    });
   }
 
   ngOnDestroy(): void
@@ -78,12 +87,13 @@ export class VistaPreviaEnVivoComponent implements OnInit, OnDestroy
     {
       clearInterval(this.intervaloRotacion);
     }
-    this.signalr.off('PublicidadRemovida');
-    this.signalr.off('RefrescarVigentes');
-    this.signalr.off('PublicidadNueva');
-    for (const tipo of this.tiposPantalla)
+    this.subscripciones.unsubscribe();
+    if (isPlatformBrowser(this.platformId))
     {
-      this.signalr.desunirDePantalla(tipo);
+      for (const tipo of this.tiposPantalla)
+      {
+        this.signalr.desunirDePantalla(tipo);
+      }
     }
   }
 
@@ -151,29 +161,26 @@ export class VistaPreviaEnVivoComponent implements OnInit, OnDestroy
 
   private registrarListeners(): void
   {
-    if (this.listenersRegistrados) return;
-    this.listenersRegistrados = true;
-
-    this.signalr.on<{ tipoPantalla: string; publicidadId: number }>('PublicidadRemovida', (payload) =>
-    {
-      if (!payload) return;
-      this.cola.update((lista) => lista.filter((p) => p.id !== payload.publicidadId));
-      this.publicidades.update((lista) => lista.filter((p) => p.id !== payload.publicidadId));
-      if (this.actual()?.id === payload.publicidadId)
+    this.subscripciones.add(
+      this.signalr.publicidadRemovida$.subscribe((payload) =>
       {
-        this.siguiente();
-      }
-    });
+        if (!payload) return;
+        this.cola.update((lista) => lista.filter((p) => p.id !== payload.publicidadId));
+        this.publicidades.update((lista) => lista.filter((p) => p.id !== payload.publicidadId));
+        if (this.actual()?.id === payload.publicidadId)
+        {
+          this.siguiente();
+        }
+      })
+    );
 
-    this.signalr.on<string>('RefrescarVigentes', () =>
-    {
-      this.cargar();
-    });
+    this.subscripciones.add(
+      this.signalr.refrescarVigentes$.subscribe(() => this.cargar())
+    );
 
-    this.signalr.on<unknown>('PublicidadNueva', () =>
-    {
-      this.cargar();
-    });
+    this.subscripciones.add(
+      this.signalr.publicidadNueva$.subscribe(() => this.cargar())
+    );
   }
 
   private cargar(): void

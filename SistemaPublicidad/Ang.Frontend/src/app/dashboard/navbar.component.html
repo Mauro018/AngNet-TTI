@@ -15,38 +15,23 @@
           {{ temaLabel }}
         </button>
       </li>
-      <li class="navbar__menu-item">
-        <button
-          class="navbar__button"
-          [class.navbar__button--active]="activeSection === 'Inicio'"
-          (click)="selectSection('Inicio')"
-        >
-          Inicio
-        </button>
-      </li>
-      <li class="navbar__menu-item">
-        <button
-          class="navbar__button"
-          [class.navbar__button--active]="activeSection === 'Empresas'"
-          (click)="selectSection('Empresas')"
-        >
-          Empresas
-        </button>
-      </li>
-      <li class="navbar__menu-item">
-        <button
-          class="navbar__button"
-          [class.navbar__button--active]="activeSection === 'Publicidades'"
-          (click)="selectSection('Publicidades')"
-        >
-          Publicidades
-          <span
-            *ngIf="sections.find(s => s.id === 'Publicidades')?.alert"
-            class="navbar__alert"
-            [class]="getAlertClass(sections.find(s => s.id === 'Publicidades')?.alert)"
-          ></span>
-        </button>
-      </li>
+      @for (section of sections; track section.id) {
+        <li class="navbar__menu-item">
+          <button
+            class="navbar__button"
+            [class.navbar__button--active]="activeSection === section.id"
+            (click)="selectSection(section.id)"
+          >
+            {{ section.label }}
+            @if (section.alert) {
+              <span
+                class="navbar__alert"
+                [class]="getAlertClass(section.alert)"
+              ></span>
+            }
+          </button>
+        </li>
+      }
     </ul>
 
   </div>

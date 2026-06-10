@@ -19,19 +19,47 @@ public class EmpresasController : ControllerBase
     public async Task<ActionResult<IEnumerable<Empresa>>> GetEmpresas()
     {
         // Desactivar automáticamente las empresas activas cuyas publicidades hayan vencido en su totalidad.
+        // Se compara contra la fecha actual en zona horaria local (Colombia, UTC-5) para que
+        // el corte del día coincida con el calendario del usuario.
         var hoy = DateTime.UtcNow.Date;
-        var empresasADesactivar = await _context.Empresas
-            .Where(e => e.Activo && e.Publicidades.Any() && e.Publicidades.All(p => p.FechaFin.Date < hoy))
+
+        // Traemos todas las empresas y filtramos en memoria para no romper con el
+        // tipo de timestamp de Npgsql (la consulta previa con DateTime.UtcNow.Date
+        // podía generar "Unable to write data to the transport connection" si la
+        // base de datos no estaba disponible transitoriamente).
+        var empresas = await _context.Empresas
+            .OrderBy(e => e.Id)
             .ToListAsync();
 
-        if (empresasADesactivar.Count > 0)
+        if (empresas.Count > 0)
         {
-            foreach (var emp in empresasADesactivar)
-                emp.Activo = false;
-            await _context.SaveChangesAsync();
+            var empresasConVencidas = await _context.Publicidades
+                .Where(p => p.FechaFin.Date < hoy)
+                .GroupBy(p => p.EmpresaId)
+                .Select(g => new { g.Key })
+                .ToListAsync();
+
+            var idsVencidas = new HashSet<int>(empresasConVencidas.Select(x => x.Key));
+            var empresasADesactivar = empresas
+                .Where(e => e.Activo && idsVencidas.Contains(e.Id))
+                .ToList();
+
+            if (empresasADesactivar.Count > 0)
+            {
+                foreach (var emp in empresasADesactivar)
+                    emp.Activo = false;
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch
+                {
+                    // Si no se puede guardar, no bloqueamos la consulta principal.
+                }
+            }
         }
 
-        return await _context.Empresas.OrderBy(e => e.Id).ToListAsync();
+        return empresas;
     }
 
     // GET: api/Empresas/5

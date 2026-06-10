@@ -84,7 +84,22 @@ builder.Services.Configure<FormOptions>(options =>
     options.MultipartBodyLengthLimit = 250 * 1024 * 1024; // 250 MB
 });
 
-builder.Services.AddSignalR();
+// Configurar JSON para que los mensajes de SignalR usen camelCase y
+// coincidan con los nombres que el cliente @microsoft/signalr espera.
+// (No existe HubOptions.SerializerOptions en .NET 9; en su lugar usamos
+//  AddJsonProtocol sobre el servicio de SignalR.)
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = true;
+})
+.AddJsonProtocol(options =>
+{
+    options.PayloadSerializerOptions = new System.Text.Json.JsonSerializerOptions
+    {
+        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+    };
+});
 
 // Servicio en segundo plano que detecta cuando una publicidad vence y
 // notifica a las pantallas y a la vista previa para que la retiren.

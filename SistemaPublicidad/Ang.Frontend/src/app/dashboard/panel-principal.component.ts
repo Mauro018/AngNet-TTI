@@ -13,6 +13,7 @@ import { ListaEmpresasComponent } from './lista-empresas.component';
 import { FormularioPublicidadComponent } from './formulario-publicidad.component';
 import { ListaPublicidadesComponent } from './lista-publicidades.component';
 import { VistaPreviaEnVivoComponent } from '../vista-previa/vista-previa.component';
+import { PanelPantallasComponent } from './panel-pantallas.component';
 
 @Component({
   selector: 'app-panel-principal',
@@ -27,6 +28,7 @@ import { VistaPreviaEnVivoComponent } from '../vista-previa/vista-previa.compone
     FormularioPublicidadComponent,
     ListaPublicidadesComponent,
     VistaPreviaEnVivoComponent,
+    PanelPantallasComponent,
   ],
   templateUrl: './panel-principal.component.html',
   styleUrls: ['./panel-principal.component.css'],
@@ -69,10 +71,12 @@ export class PanelPrincipalComponent implements OnInit {
   protected seccionActiva = signal('Inicio');
   // Navegación principal del panel.
   // La alerta de Publicidades se recalcula según los vencimientos para que el aviso sea visible desde arriba.
-  protected seccionesNavegacion = signal<SeccionNavegacion[]>([
+  protected readonly seccionesNavegacion = signal<SeccionNavegacion[]>([
     { id: 'Inicio', label: 'Inicio' },
     { id: 'Empresas', label: 'Empresas' },
     { id: 'Publicidades', label: 'Publicidades', alert: this.calculatePublicidadAlert() },
+    { id: 'VistaPrevia', label: 'Vista previa' },
+    { id: 'Pantallas', label: 'Pantallas' },
   ]);
 
   // Cambia la sección visible en la interfaz y refresca las alertas del menú.
@@ -85,7 +89,10 @@ export class PanelPrincipalComponent implements OnInit {
   // Se ejecuta después de cada cambio importante para mantener sincronizado el menú con los datos.
   private updateAlerts(): void {
     const sections = this.seccionesNavegacion();
-    sections[2].alert = this.calculatePublicidadAlert();
+    const idxPub = sections.findIndex((s) => s.id === 'Publicidades');
+    if (idxPub >= 0) {
+      sections[idxPub] = { ...sections[idxPub], alert: this.calculatePublicidadAlert() };
+    }
     this.seccionesNavegacion.set([...sections]);
   }
 
