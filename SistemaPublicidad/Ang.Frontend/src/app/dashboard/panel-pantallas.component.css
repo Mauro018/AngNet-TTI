@@ -81,7 +81,7 @@
 }
 
 .panel-pantallas__boton-principal {
-  background: #2563eb;
+  background: #26be3d;
   color: #fff;
   border: 0;
   padding: 0.75rem 1.25rem;
@@ -90,7 +90,7 @@
   cursor: pointer;
   align-self: end;
 }
-.panel-pantallas__boton-principal:hover { background: #1d4ed8; }
+.panel-pantallas__boton-principal:hover { background: #13824d; }
 
 .panel-pantallas__mensaje {
   margin: 0;

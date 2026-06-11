@@ -1,18 +1,4 @@
 <div class="contenedor-pantalla">
-  <header class="encabezado-pantalla">
-    <span class="encabezado-pantalla__tipo">
-      {{ tipoPantalla() === 'VerticalSamsung' ? 'Pantalla Vertical' : 'Pantalla Horizontal' }}
-    </span>
-    <span class="encabezado-pantalla__id">{{ identificadorPantalla() }}</span>
-    <button
-      type="button"
-      class="encabezado-pantalla__boton-pantalla-completa"
-      (click)="pantallaCompleta()"
-    >
-      Pantalla completa
-    </button>
-  </header>
-
   <main class="reproductor-pantalla">
     <ng-container *ngIf="actual(); else sinContenido">
       <video
@@ -24,18 +10,24 @@
         (ended)="onVideoEnded()"
         (error)="siguiente()"
       ></video>
-      <div class="reproductor-pantalla__pie">
-        <strong>{{ actual()?.nombrePublicidad }}</strong>
-        <span>{{ actual()?.empresaNombre }}</span>
-      </div>
     </ng-container>
 
     <ng-template #sinContenido>
       <div class="reproductor-pantalla__vacio">
         <p>{{ mensaje() }}</p>
-        <button type="button" class="boton-iniciar" (click)="iniciarManual()">
-          Iniciar reproducción
+        <button
+          *ngIf="reproduciendo(); else botonIniciar"
+          type="button"
+          class="boton-iniciar"
+          (click)="iniciarReproduccion()"
+        >
+          Reintentar
         </button>
+        <ng-template #botonIniciar>
+          <button type="button" class="boton-iniciar" (click)="iniciarReproduccion()">
+            ▶ Iniciar reproducción
+          </button>
+        </ng-template>
       </div>
     </ng-template>
   </main>

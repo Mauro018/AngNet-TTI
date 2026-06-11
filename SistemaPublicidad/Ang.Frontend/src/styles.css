@@ -58,7 +58,26 @@ body {
 		linear-gradient(180deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 88%, var(--bg-accent)) 48%, var(--bg-accent) 100%);
 	color: var(--text);
 	transition: background 0.25s ease, color 0.25s ease;
-  padding:4px;
+	padding: 4px;
+}
+
+/* Quitar cualquier scroll que pueda generarse en la pantalla del reproductor
+	 y forzar que ocupe exactamente 100% del viewport. */
+:host(.app-reproductor-pantalla),
+app-reproductor-pantalla,
+app-reproductor-pantalla > * {
+	display: block;
+	position: fixed !important;
+	inset: 0 !important;
+	width: 100vw !important;
+	height: 100vh !important;
+	max-width: 100vw !important;
+	max-height: 100vh !important;
+	margin: 0 !important;
+	padding: 0 !important;
+	border: 0 !important;
+	overflow: hidden !important;
+	background: #000;
 }
 
 * {
