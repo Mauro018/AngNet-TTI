@@ -39,12 +39,18 @@ public class PublicidadesController : ControllerBase
     [HttpGet("vigentes")]
     public async Task<ActionResult<IEnumerable<PublicidadVigenteRespuesta>>> ObtenerVigentes([FromQuery] string? tipoPantalla)
     {
-        var ahora = DateTime.UtcNow;
+        // Comparamos por FECHA (sin hora) para no romper el filtrado por
+        // zona horaria. La fecha de inicio/fin se guarda como DateTime
+        // con hora 00:00 local (ver PostPublicidad) y queremos que la
+        // publicidad sea "vigente" durante todo el día calendario, no
+        // solo unas horas concretas del día.
+        var hoy = DateTime.Today;
+
         var consulta = _context.Publicidades
             .AsNoTracking()
             .Include(p => p.Empresa)
-            .Where(p => p.FechaInicio <= ahora
-                        && p.FechaFin >= ahora
+            .Where(p => p.FechaInicio.Date <= hoy
+                        && p.FechaFin.Date >= hoy
                         && p.VideoNombreArchivo != null
                         && p.VideoNombreArchivo != string.Empty);
 
@@ -228,6 +234,9 @@ public class PublicidadesController : ControllerBase
         };
 
         _context.Publicidades.Add(publicidad);
+        // Guardamos FechaInicio/FechaFin con Kind=Utc y hora 00:00 para
+        // que la comparación por .Date en ObtenerVigentes sea estable
+        // independientemente de la zona horaria del servidor.
         publicidad.FechaInicio    = DateTime.SpecifyKind(publicidad.FechaInicio, DateTimeKind.Utc);
         publicidad.FechaFin       = DateTime.SpecifyKind(publicidad.FechaFin, DateTimeKind.Utc);
         publicidad.FechaCreacion  = DateTime.UtcNow; // Siempre UTC al crear
@@ -273,8 +282,8 @@ public class PublicidadesController : ControllerBase
         var fechaFin = fechaInicio.AddMonths(datos.DuracionMeses).AddDays(-1);
 
         publicidad.DuracionMeses = datos.DuracionMeses;
-        publicidad.FechaInicio = fechaInicio;
-        publicidad.FechaFin = fechaFin;
+        publicidad.FechaInicio = DateTime.SpecifyKind(fechaInicio, DateTimeKind.Utc);
+        publicidad.FechaFin = DateTime.SpecifyKind(fechaFin, DateTimeKind.Utc);
         publicidad.Descripcion = datos.Observaciones.Trim();
 
         try { await _context.SaveChangesAsync(); }

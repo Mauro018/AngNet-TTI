@@ -1,6 +1,7 @@
 // Panel principal que organiza el inicio, la gestión de empresas y la gestión de publicidades.
-import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, afterNextRender, inject, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 
 import { Empresa, Publicidad, TarjetaEstado, TarjetaMetrica } from '../shared/models/modelo-publicidad';
 import { EmpresaService } from '../services/empresa';
@@ -34,6 +35,8 @@ import { PanelPantallasComponent } from './panel-pantallas.component';
   styleUrls: ['./panel-principal.component.css'],
 })
 export class PanelPrincipalComponent implements OnInit {
+  private readonly platformId = inject(PLATFORM_ID);
+
   // Estado reactivo cargado desde la API para que los formularios persistan realmente en la base de datos.
   protected empresasRegistradas = signal<Empresa[]>([]);
   protected publicidadesRegistradas = signal<Publicidad[]>([]);
@@ -60,11 +63,21 @@ export class PanelPrincipalComponent implements OnInit {
   constructor(
     private readonly empresaService: EmpresaService,
     private readonly publicidadService: PublicidadService,
-  ) {}
+  ) {
+    // Cargamos empresas/publicidades solo en el navegador, dentro de
+    // afterNextRender. Así evitamos que durante el SSR (que corre en Node)
+    // se disparen peticiones HTTP hacia la IP de la LAN, las cuales se
+    // cuelgan y hacen que Angular muestre el warning
+    // "Application did not stabilize within 9 seconds".
+    afterNextRender(() => {
+      this.cargarEmpresas();
+      this.cargarPublicidades();
+    });
+  }
 
   ngOnInit(): void {
-    this.cargarEmpresas();
-    this.cargarPublicidades();
+    // ngOnInit se sigue ejecutando también en SSR. Lo dejamos vacío a
+    // propósito: las llamadas HTTP se difieren a afterNextRender (browser).
   }
 
   // Sección activa del panel. Cada valor coincide con una opción de navegación.

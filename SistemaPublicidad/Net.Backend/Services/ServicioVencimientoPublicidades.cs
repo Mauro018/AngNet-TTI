@@ -39,12 +39,14 @@ namespace SistemaPublicidad.Net.Backend.Services
                     using var scope = _scopeFactory.CreateScope();
                     var db = scope.ServiceProvider.GetRequiredService<Data.ApplicationDbContext>();
 
-                    var ahoraUtc = DateTime.UtcNow;
+                    // Comparamos por fecha (sin hora) para mantener consistencia
+                    // con ObtenerVigentes del PublicidadesController.
+                    var hoy = DateTime.Today;
 
                     var publicidades = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions
                         .ToListAsync(db.Publicidades
-                            .Where(p => p.FechaInicio <= ahoraUtc
-                                        && p.FechaFin >= ahoraUtc
+                            .Where(p => p.FechaInicio.Date <= hoy
+                                        && p.FechaFin.Date >= hoy
                                         && p.VideoNombreArchivo != null
                                         && p.VideoNombreArchivo != string.Empty),
                             stoppingToken);
