@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
-import { environment } from '../environment/environment';
+import { API_URL } from './detectar-api';
 import { Empresa, SectorIndustriaEmpresa } from '../shared/models/modelo-publicidad';
 
 interface EmpresaApi {
@@ -22,7 +22,7 @@ interface EmpresaApi {
 })
 export class EmpresaService {
 
-  private readonly apiUrl = `${environment.apiUrl}/api/empresas`;
+  private readonly apiUrl = `${API_URL}/api/empresas`;
 
   constructor(private readonly http: HttpClient) { }
 

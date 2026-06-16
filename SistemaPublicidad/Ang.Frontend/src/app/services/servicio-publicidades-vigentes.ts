@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 
-import { environment } from '../environment/environment';
+import { API_URL } from './detectar-api';
 import {
   PublicidadVigente,
   TipoPantallaPublicidad,
@@ -16,7 +16,7 @@ import {
 @Injectable({ providedIn: 'root' })
 export class ServicioPublicidadesVigentes {
   private readonly http = inject(HttpClient);
-  private readonly urlBase = `${environment.apiUrl}/api/publicidades/vigentes`;
+  private readonly urlBase = `${API_URL}/api/publicidades/vigentes`;
 
   obtenerVigentes(tipoPantalla?: TipoPantallaPublicidad): Observable<PublicidadVigente[]>
   {
@@ -52,11 +52,11 @@ export class ServicioPublicidadesVigentes {
       );
   }
 
-  /** Convierte "/api/..." a URL absoluta usando la base del environment. */
+  /** Convierte "/api/..." a URL absoluta usando la base detectada del host. */
   private resolverUrlAbsoluta(url: string): string
   {
     if (!url) return url;
     if (/^https?:\/\//i.test(url)) return url;
-    return `${environment.apiUrl.replace(/\/$/, '')}${url.startsWith('/') ? '' : '/'}${url}`;
+    return `${API_URL.replace(/\/$/, '')}${url.startsWith('/') ? '' : '/'}${url}`;
   }
 }

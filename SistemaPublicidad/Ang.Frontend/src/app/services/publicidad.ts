@@ -2,7 +2,7 @@
 import { HttpClient } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 
-import { environment } from '../environment/environment';
+import { API_URL } from './detectar-api';
 import { Publicidad, TipoPantallaPublicidad } from '../shared/models/modelo-publicidad';
 
 export interface NuevaPublicidadEntrada {
@@ -44,7 +44,7 @@ interface PublicidadApi {
   providedIn: 'root',
 })
 export class PublicidadService {
-  private readonly apiUrl = `${environment.apiUrl}/api/publicidades`;
+  private readonly apiUrl = `${API_URL}/api/publicidades`;
 
   constructor(private readonly http: HttpClient) {}
 

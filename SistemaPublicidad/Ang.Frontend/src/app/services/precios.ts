@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map } from 'rxjs/operators';
 import { Observable } from 'rxjs';
-import { environment } from '../environment/environment';
+import { API_URL } from './detectar-api';
 
 export interface PrecioApi {
   id: number;
@@ -20,7 +20,7 @@ export interface PrecioCreateEntrada {
 
 @Injectable({ providedIn: 'root' })
 export class PreciosService {
-  private readonly apiUrl = `${environment.apiUrl}/api/precios`;
+  private readonly apiUrl = `${API_URL}/api/precios`;
 
   constructor(private readonly http: HttpClient) {}
 

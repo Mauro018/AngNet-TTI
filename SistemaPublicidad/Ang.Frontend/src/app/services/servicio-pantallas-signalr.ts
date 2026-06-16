@@ -2,7 +2,7 @@ import { Injectable, OnDestroy, signal } from '@angular/core';
 import { Observable, Subject, filter, map, share, takeUntil } from 'rxjs';
 import * as signalR from '@microsoft/signalr';
 
-import { environment } from '../environment/environment';
+import { API_URL } from './detectar-api';
 import { TipoPantallaPublicidad } from '../shared/models/modelo-publicidad-vigente';
 
 /**
@@ -62,7 +62,7 @@ export class ServicioPantallasSignalR implements OnDestroy
 
     try
     {
-      const urlBase = environment.apiUrl.replace(/\/$/, '');
+      const urlBase = API_URL.replace(/\/$/, '');
       this.conexion = new signalR.HubConnectionBuilder()
         .withUrl(`${urlBase}/hubpantallas`)
         .withAutomaticReconnect()
