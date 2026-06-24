@@ -27,6 +27,9 @@ import { ServicioPantallasSignalR } from '../services/servicio-pantallas-signalr
  *    (los navegadores bloquean el autoplay sin interacción previa).
  *  - Cuando un video termina, salta al siguiente y al acabar la cola
  *    vuelve a empezar desde el primero (bucle infinito).
+ *  - Al detectar cambios en las publicidades, actualiza la cola en caliente
+ *    sin recargar la página, conservando el modo pantalla completa y el video
+ *    actual cuando sea posible.
  *  - Al entrar a pantalla completa se ocultan el header y los botones;
  *    para salir basta con presionar Esc (comportamiento nativo) o
  *    la tecla F / Backspace.
@@ -50,6 +53,7 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
 
   private readonly subscripciones = new Subscription();
   private listenerFullscreenChange?: () => void;
+  private listenerBeforeUnload?: () => void;
 
   /** Tipo de pantalla recibido por la URL. */
   protected readonly tipoPantalla = signal<TipoPantallaPublicidad>('VerticalSamsung');
@@ -88,13 +92,45 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
       document.body.style.padding = '0';
       document.body.style.background = '#000';
 
-      // Listener del cambio de estado de pantalla completa (Esc, F11, etc.).
+      // Listener del cambio de estado de pantalla completa (Esc, F11, botón X, etc.).
       this.listenerFullscreenChange = () =>
       {
         const activo = !!(document.fullscreenElement || (document as any).webkitFullscreenElement);
         this.enPantallaCompleta.set(activo);
+
+        // Sincronizar sessionStorage con el estado real. Si el usuario salió
+        // de pantalla completa manualmente, limpiamos la marca para que una
+        // futura recarga no vuelva a forzar el fullscreen sin su interacción.
+        try
+        {
+          if (activo)
+          {
+            sessionStorage.setItem(`reproductorFullscreen:${this.tipoPantalla()}`, '1');
+          }
+          else
+          {
+            sessionStorage.removeItem(`reproductorFullscreen:${this.tipoPantalla()}`);
+          }
+        }
+        catch { /* sin acciones */ }
       };
       document.addEventListener('fullscreenchange', this.listenerFullscreenChange);
+
+      // Si el usuario recarga manualmente (F5) estando en pantalla completa,
+      // limpiamos la marca para que la nueva página no vuelva a forzar el
+      // fullscreen sin una nueva interacción (presionar F).
+      this.listenerBeforeUnload = () =>
+      {
+        if (document.fullscreenElement || (document as any).webkitFullscreenElement)
+        {
+          try
+          {
+            sessionStorage.removeItem(`reproductorFullscreen:${this.tipoPantalla()}`);
+          }
+          catch { /* sin acciones */ }
+        }
+      };
+      window.addEventListener('beforeunload', this.listenerBeforeUnload);
     }
 
     // Nos unimos al hub por si SignalR llega a funcionar, pero
@@ -106,7 +142,7 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
 
     // ==========================================================
     // Mecanismo PRINCIPAL: polling cada 5 s contra el backend.
-    // Compara la versión y recarga si cambió.
+    // Compara la versión y actualiza la cola en caliente si cambió.
     // ==========================================================
     this.iniciarPollingVigentes();
 
@@ -184,6 +220,10 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
       {
         document.removeEventListener('fullscreenchange', this.listenerFullscreenChange);
       }
+      if (this.listenerBeforeUnload)
+      {
+        window.removeEventListener('beforeunload', this.listenerBeforeUnload);
+      }
       // Restaurar scroll/overflow del body y html.
       document.documentElement.classList.remove('app-reproductor-pantalla');
       document.documentElement.style.overflow = '';
@@ -198,37 +238,16 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
     }
   }
 
-  /** Recarga la lista de publicidades vigentes desde el backend. */
+  /** Carga la lista de publicidades vigentes desde el backend. */
   private cargarVigentes(): void
   {
     if (!isPlatformBrowser(this.platformId)) return;
     this.servicioVigentes.obtenerVigentes(this.tipoPantalla()).subscribe({
       next: (lista) =>
       {
-        // Mantener la cola actualizada pero conservando el actual si existe.
-        const anterior = this.actual();
-        this.cola.set(lista);
-
-        // Comparar contra la última lista conocida y detectar cualquier
-        // cambio (altas, bajas, video reemplazado, fechas editadas) para
-        // recargar la página de forma prolija, sin importar si SignalR
-        // llegó o no.
-        this.detectarCambiosYRecargar(lista);
-
-        if (lista.length === 0)
-        {
-          this.actual.set(null);
-          this.mensaje.set('No hay publicidades vigentes para este tipo de pantalla.');
-          return;
-        }
-        if (!anterior || !lista.some((p) => p.id === anterior.id))
-        {
-          if (this.reproduciendo()) this.reproducir(0);
-          else
-            this.mensaje.set(
-              `Hay ${lista.length} publicidades vigentes. Pulsa "Iniciar reproducción" para verlas.`
-            );
-        }
+        // Detectar cambios y aplicar la nueva lista en caliente, sin recargar
+        // la página, para conservar el modo pantalla completo y la reproducción.
+        this.detectarCambiosYActualizar(lista);
       },
       error: (err) =>
       {
@@ -241,7 +260,7 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
   }
 
   // ============================================================
-  // Polling de respaldo (cada 10s) + recarga por SignalR
+  // Polling de respaldo (cada 5 s) + actualización en caliente
   // ============================================================
   /**
    * Hash de la última lista conocida. Sirve para que el polling de
@@ -282,39 +301,111 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
 
   /**
    * Compara la lista recién obtenida contra la última conocida.
-   * Si difiere, programa una recarga de la página completa.
-   * Normaliza URL de video y fechas para que pequeños cambios de
-   * serialización (por ejemplo, distinta hora UTC) no disparen
-   * recargas innecesarias, pero sí cualquier cambio real.
+   * Si difiere, aplica la nueva lista en caliente sin recargar la página,
+   * conservando el modo pantalla completa y la reproducción actual cuando
+   * sea posible.
    */
-  private detectarCambiosYRecargar(lista: PublicidadVigente[]): void
+  private detectarCambiosYActualizar(lista: PublicidadVigente[]): void
   {
     const nuevoHash = this.calcularHashLista(lista);
-    if (this.hashUltimaLista && this.hashUltimaLista !== nuevoHash)
+    const primeraCarga = !this.hashUltimaLista;
+    const cambio = this.hashUltimaLista && this.hashUltimaLista !== nuevoHash;
+
+    if (primeraCarga || cambio)
     {
-      console.info(
-        '[Reproductor] Cambio detectado en la lista de publicidades → recargando.',
-        { cantidad: lista.length }
-      );
-      this.programarRecarga();
+      if (cambio)
+      {
+        console.info(
+          '[Reproductor] Cambio detectado en la lista de publicidades → actualizando en caliente.',
+          { cantidad: lista.length }
+        );
+      }
+      this.aplicarListaEnCaliente(lista);
     }
+
     this.hashUltimaLista = nuevoHash;
   }
 
   /**
-   * Compara la versión devuelta por el endpoint liviano contra la
-   * última conocida. Si difiere, recarga. Es el método principal de
-   * detección de cambios: barato (1 sola consulta de pocos bytes).
+   * Aplica una nueva lista de publicidades sin recargar la página.
+   * Mantiene el video actual si sigue vigente y con la misma URL; de lo
+   * contrario reinicia la reproducción desde el elemento correspondiente.
    */
-  private detectarCambiosVersionYRecargar(version: { hash: string; total: number }): void
+  private aplicarListaEnCaliente(nuevaLista: PublicidadVigente[]): void
+  {
+    const anterior = this.actual();
+    const colaAnterior = this.cola();
+
+    // Primera carga: comportamiento original.
+    if (colaAnterior.length === 0)
+    {
+      this.cola.set(nuevaLista);
+      if (nuevaLista.length === 0)
+      {
+        this.actual.set(null);
+        this.mensaje.set('No hay publicidades vigentes para este tipo de pantalla.');
+      }
+      else if (this.reproduciendo())
+      {
+        this.reproducir(0);
+      }
+      else
+      {
+        this.mensaje.set(
+          `Hay ${nuevaLista.length} publicidades vigentes. Pulsa "Iniciar reproducción" para verlas.`
+        );
+      }
+      return;
+    }
+
+    this.cola.set(nuevaLista);
+
+    if (nuevaLista.length === 0)
+    {
+      this.actual.set(null);
+      this.mensaje.set('No hay publicidades vigentes para este tipo de pantalla.');
+      return;
+    }
+
+    // Si la publicidad actual sigue vigente e intacta, no interrumpir.
+    const mismoActual = anterior && nuevaLista.find(
+      (p) => p.id === anterior.id && p.urlVideo === anterior.urlVideo
+    );
+    if (mismoActual)
+    {
+      return;
+    }
+
+    // El actual cambió o desapareció: reanudar desde el mismo id si existe,
+    // o desde el inicio de la nueva cola.
+    if (this.reproduciendo())
+    {
+      const idx = anterior ? nuevaLista.findIndex((p) => p.id === anterior.id) : -1;
+      this.reproducir(idx >= 0 ? idx : 0);
+    }
+    else
+    {
+      this.mensaje.set(
+        `Hay ${nuevaLista.length} publicidades vigentes. Pulsa "Iniciar reproducción" para verlas.`
+      );
+    }
+  }
+
+  /**
+   * Compara la versión devuelta por el endpoint liviano contra la
+   * última conocida. Si difiere, carga la lista completa y aplica los
+   * cambios en caliente. Es el método principal de detección de cambios:
+   * barato (1 sola consulta de pocos bytes).
+   */
+  private detectarCambiosVersionYActualizar(version: { hash: string; total: number }): void
   {
     if (this.hashUltimaVersion && this.hashUltimaVersion !== version.hash)
     {
       console.info(
-        '[Reproductor] Cambio de versión detectado → recargando.',
+        '[Reproductor] Cambio de versión detectado → actualizando lista en caliente.',
         { total: version.total, hash: version.hash }
       );
-      this.programarRecarga();
+      this.cargarVigentes();
     }
     else
     {
@@ -328,8 +419,10 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
    * de publicidades vigentes cada 5 segundos. El backend calcula un
    * hash sobre los campos que pueden cambiar (id, nombre, video,
    * duración, fechas) y solo devuelve ese hash + total. Si el hash
-   * difiere del último conocido, la página se recarga. Es la fuente
-   * de verdad para la recarga automática, independiente de SignalR.
+   * difiere del último conocido, se carga la lista completa y se
+   * aplican los cambios en caliente, sin recargar la página.
+   * Es la fuente de verdad para el refresco automático, independiente
+   * de SignalR.
    */
   private iniciarPollingVigentes(): void
   {
@@ -339,20 +432,19 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
 
     // Hacemos la primera consulta de inmediato (sin esperar 5s) para
     // establecer el hash base lo antes posible.
-    this.consultarVersionYRecargar();
+    this.consultarVersionYActualizar();
 
-    this.intervaloPolling = window.setInterval(() => this.consultarVersionYRecargar(), 5000);
+    this.intervaloPolling = window.setInterval(() => this.consultarVersionYActualizar(), 5000);
   }
 
-  /** Realiza una consulta al endpoint de versión y evalúa si debe recargar. */
-  private consultarVersionYRecargar(): void
+  /** Realiza una consulta al endpoint de versión y evalúa si debe actualizar. */
+  private consultarVersionYActualizar(): void
   {
-    if (this.recargando) return;
     this.servicioVigentes.obtenerVersionVigentes(this.tipoPantalla()).subscribe({
       next: (version) =>
       {
         console.info('[Reproductor] Versión consultada:', { total: version.total, hash: version.hash.substring(0, 12) + '…' });
-        this.detectarCambiosVersionYRecargar(version);
+        this.detectarCambiosVersionYActualizar(version);
       },
       error: (err) =>
       {
@@ -369,87 +461,6 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
       clearInterval(this.intervaloPolling);
       this.intervaloPolling = undefined;
     }
-  }
-
-  // ============================================================
-  // Recarga automática
-  // ============================================================
-  /**
-   * Indica si la página ya se está recargando para evitar bucles
-   * infinitos (p. ej. si el backend dispara varios eventos juntos).
-   */
-  private recargando = false;
-
-  /** Marca que ya hay una recarga pendiente y devuelve true si es
-   *  la primera vez (para que solo se programe una vez). */
-  private marcarRecargaPendiente(): boolean
-  {
-    if (this.recargando) return false;
-    this.recargando = true;
-    return true;
-  }
-
-  /**
-   * Programa una recarga de la página completa. Antes de recargar
-   * intenta volver a entrar en modo pantalla completa y reanudar la
-   * reproducción (sin requerir un nuevo clic del operador).
-   *
-   *  - Se ejecuta con un pequeño retardo para que el usuario perciba
-   *    el cambio (y para que el backend termine de procesar las
-   *    notificaciones que disparó la recarga).
-   *  - Tras la recarga, si el operador ya había pulsado "Iniciar
-   *    reproducción", el componente reanuda automáticamente el bucle.
-   */
-  private programarRecarga(): void
-  {
-    if (!isPlatformBrowser(this.platformId)) return;
-    if (!this.marcarRecargaPendiente()) return;
-
-    // Persistir en sessionStorage que el usuario ya inició la
-    // reproducción, para que al recargar el componente reanude solo.
-    try
-    {
-      const estabaReproduciendo =
-        sessionStorage.getItem(`reproductorAuto:${this.tipoPantalla()}`) === '1';
-      const estabaPantallaCompleta = sessionStorage.getItem(
-        `reproductorFullscreen:${this.tipoPantalla()}`
-      ) === '1';
-      if (this.reproduciendo()) sessionStorage.setItem(`reproductorAuto:${this.tipoPantalla()}`, '1');
-      if (estabaPantallaCompleta || this.enPantallaCompleta())
-      {
-        sessionStorage.setItem(`reproductorFullscreen:${this.tipoPantalla()}`, '1');
-      }
-      // Si el operador nunca dio play, limpiamos cualquier marca previa
-      // para no forzar autoplay sin su consentimiento.
-      if (!this.reproduciendo() && !estabaReproduciendo)
-      {
-        sessionStorage.removeItem(`reproductorAuto:${this.tipoPantalla()}`);
-        sessionStorage.removeItem(`reproductorFullscreen:${this.tipoPantalla()}`);
-      }
-    }
-    catch { /* sessionStorage puede no estar disponible */ }
-
-    console.info('[Reproductor] Programando recarga forzada de la página en 800ms...');
-
-    // Retardo corto para que la BD termine de confirmar el cambio,
-    // pero suficientemente rápido para que el operador lo vea casi
-    // instantáneamente. Recarga desde el servidor (sin caché).
-    setTimeout(() =>
-    {
-      try
-      {
-        // Truco para evitar la caché del navegador: recargamos
-        // con un query string único y luego limpiamos la URL.
-        const url = new URL(window.location.href);
-        url.searchParams.set('_t', Date.now().toString());
-        window.location.replace(url.toString());
-      }
-      catch (error)
-      {
-        console.error('[Reproductor] No se pudo recargar la página:', error);
-        this.recargando = false;
-      }
-    }, 800);
   }
 
   /** Empieza a reproducir el elemento en la posición indicada. */
