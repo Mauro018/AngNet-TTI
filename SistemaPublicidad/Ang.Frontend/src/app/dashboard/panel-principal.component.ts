@@ -1,11 +1,12 @@
 // Panel principal que organiza el inicio, la gestión de empresas y la gestión de publicidades.
 import { PLATFORM_ID } from '@angular/core';
-import { Component, OnInit, afterNextRender, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, afterNextRender, inject, signal } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 
 import { Empresa, Publicidad, TarjetaEstado, TarjetaMetrica } from '../shared/models/modelo-publicidad';
 import { EmpresaService } from '../services/empresa';
 import { EditarPublicidadEntrada, NuevaPublicidadEntrada, PublicidadService } from '../services/publicidad';
+import { ServicioPublicidadesVigentes, VersionGlobal } from '../services/servicio-publicidades-vigentes';
 import { HeroeComponent } from './heroe.component';
 import { ResumenComponent } from './resumen.component';
 import { Navbar, SeccionNavegacion } from './navbar.component';
@@ -34,8 +35,9 @@ import { PanelPantallasComponent } from './panel-pantallas.component';
   templateUrl: './panel-principal.component.html',
   styleUrls: ['./panel-principal.component.css'],
 })
-export class PanelPrincipalComponent implements OnInit {
+export class PanelPrincipalComponent implements OnInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly servicioVigentes = inject(ServicioPublicidadesVigentes);
 
   // Estado reactivo cargado desde la API para que los formularios persistan realmente en la base de datos.
   protected empresasRegistradas = signal<Empresa[]>([]);
@@ -44,6 +46,15 @@ export class PanelPrincipalComponent implements OnInit {
   protected publicidadErrorMessage = signal('');
   protected empresaEditando = signal<Empresa | null>(null);
   protected publicidadEditando = signal<Publicidad | null>(null);
+
+  /**
+   * Hash de la última versión consultada al backend (vía endpoint
+   * liviano). Se compara cada 5s para detectar cambios (altas, bajas,
+   * video reemplazado, fechas editadas) y recargar la lista general
+   * de publicidades sin que el usuario tenga que refrescar la página.
+   */
+  private hashUltimaVersion = '';
+  private intervaloPolling?: number;
 
   protected readonly todayLabel = new Intl.DateTimeFormat('es-CO', {
     weekday: 'long',
@@ -72,12 +83,60 @@ export class PanelPrincipalComponent implements OnInit {
     afterNextRender(() => {
       this.cargarEmpresas();
       this.cargarPublicidades();
+      this.iniciarPollingVersion();
     });
   }
 
   ngOnInit(): void {
     // ngOnInit se sigue ejecutando también en SSR. Lo dejamos vacío a
     // propósito: las llamadas HTTP se difieren a afterNextRender (browser).
+  }
+
+  ngOnDestroy(): void {
+    this.detenerPollingVersion();
+  }
+
+  // ============================================================
+  // Polling de respaldo (cada 5s) → recarga la lista si cambia
+  // ============================================================
+
+  /**
+   * Polling que consulta cada 5s el endpoint liviano de versión.
+   * Si el hash difiere del último conocido, recarga la lista
+   * general de publicidades. Independiente de SignalR.
+   */
+  private iniciarPollingVersion(): void
+  {
+    if (!isPlatformBrowser(this.platformId)) return;
+    if (this.intervaloPolling) return;
+    this.intervaloPolling = window.setInterval(() =>
+    {
+      // Hash GLOBAL de TODAS las publicidades (no solo vigentes):
+      // cubre altas, bajas, ediciones y reemplazos de video.
+      this.servicioVigentes.obtenerVersionGlobal().subscribe({
+        next: (version) => this.detectarCambiosVersion(version),
+        error: (err) => console.warn('[PanelPrincipal] Polling de versión falló, reintentando en 5s:', err),
+      });
+    }, 5000);
+  }
+
+  private detenerPollingVersion(): void
+  {
+    if (this.intervaloPolling)
+    {
+      clearInterval(this.intervaloPolling);
+      this.intervaloPolling = undefined;
+    }
+  }
+
+  private detectarCambiosVersion(version: VersionGlobal): void
+  {
+    if (this.hashUltimaVersion && this.hashUltimaVersion !== version.hash)
+    {
+      console.info('[PanelPrincipal] Cambio detectado en publicidades → recargando lista.', { total: version.total });
+      this.cargarPublicidades();
+    }
+    this.hashUltimaVersion = version.hash;
   }
 
   // Sección activa del panel. Cada valor coincide con una opción de navegación.

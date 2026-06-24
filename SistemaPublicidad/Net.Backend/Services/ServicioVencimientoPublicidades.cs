@@ -14,7 +14,7 @@ namespace SistemaPublicidad.Net.Backend.Services
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly IHubContext<HubPantallas> _hubContext;
         private readonly ILogger<ServicioVencimientoPublicidades> _logger;
-        private readonly TimeSpan _intervalo = TimeSpan.FromMinutes(1);
+        private readonly TimeSpan _intervalo = TimeSpan.FromSeconds(30);
 
         public ServicioVencimientoPublicidades(
             IServiceScopeFactory scopeFactory,
@@ -31,6 +31,12 @@ namespace SistemaPublicidad.Net.Backend.Services
             // Conjunto de publicidades previamente conocidas como vigentes
             // (por tipo de pantalla). Se usa para detectar altas y bajas.
             var conocidasPorTipo = new Dictionary<string, HashSet<int>>(StringComparer.OrdinalIgnoreCase);
+            // Conjunto de publicidades que YA fueron notificadas como vencidas
+            // (por tipo de pantalla). Sirve para:
+            //   1) No notificar la misma publicidad más de una vez.
+            //   2) Detectar cuando una publicidad "vencida" vuelve a estar
+            //      vigente (p. ej. el operario extendió la fecha de fin).
+            var vencidasConocidasPorTipo = new Dictionary<string, HashSet<int>>(StringComparer.OrdinalIgnoreCase);
 
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -63,6 +69,11 @@ namespace SistemaPublicidad.Net.Backend.Services
                         set.Add(pub.Id);
                     }
 
+                    // No usamos la lista de "vencidas explícitas" para nada
+                    // más: la detección de reactivaciones se hace cruzando
+                    // las vigentes con el conjunto de "ya notificadas como
+                    // removidas" más abajo.
+
                     // Detectar publicidades que se dieron de baja (vencieron o se eliminaron)
                     foreach (var (tipo, anteriores) in conocidasPorTipo)
                     {
@@ -70,12 +81,32 @@ namespace SistemaPublicidad.Net.Backend.Services
                         var vencidas = anteriores.Except(actuales).ToList();
                         foreach (var id in vencidas)
                         {
+                            HashSet<int> yaVencidas = vencidasConocidasPorTipo.TryGetValue(tipo, out var vs) ? vs : new HashSet<int>();
+                            if (yaVencidas.Contains(id)) continue;
+                            yaVencidas.Add(id);
+                            vencidasConocidasPorTipo[tipo] = yaVencidas;
+
                             _logger.LogInformation("Publicidad {Id} ({Tipo}) vencida → notificando a las pantallas.", id, tipo);
                             await _hubContext.Clients.Group(tipo).SendAsync("PublicidadRemovida", new
                             {
                                 tipoPantalla = tipo,
                                 publicidadId = id
                             });
+                        }
+                    }
+
+                    // Detectar publicidades que estaban vencidas y se reactivaron
+                    // (el operario cambió la fecha de fin para que vuelvan a estar vigentes).
+                    foreach (var (tipo, actuales) in actualesPorTipo)
+                    {
+                        HashSet<int> yaVencidas = vencidasConocidasPorTipo.TryGetValue(tipo, out var vs) ? vs : new HashSet<int>();
+                        var reactivadas = actuales.Intersect(yaVencidas).ToList();
+                        foreach (var id in reactivadas)
+                        {
+                            yaVencidas.Remove(id);
+                            vencidasConocidasPorTipo[tipo] = yaVencidas;
+                            _logger.LogInformation("Publicidad {Id} ({Tipo}) reactivada → notificando a las pantallas.", id, tipo);
+                            await _hubContext.Clients.Group(tipo).SendAsync("RefrescarVigentes", tipo);
                         }
                     }
 

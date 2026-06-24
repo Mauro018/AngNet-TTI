@@ -91,6 +91,114 @@ public class PublicidadesController : ControllerBase
         return publicidades;
     }
 
+    /// <summary>
+    /// Versión rápida (liviana) de las publicidades vigentes para un tipo de
+    /// pantalla. Solo devuelve Id + hash SHA-256 de los campos que pueden
+    /// cambiar (nombre, video, duración, fechas). El frontend la consulta cada
+    /// 5s para detectar cambios sin descargar toda la lista.
+    /// </summary>
+    [HttpGet("version-vigentes")]
+    public async Task<ActionResult<object>> ObtenerVersionVigentes([FromQuery] string? tipoPantalla)
+    {
+        var hoy = DateTime.Today;
+
+        var consulta = _context.Publicidades
+            .AsNoTracking()
+            .Where(p => p.FechaInicio.Date <= hoy
+                        && p.FechaFin.Date >= hoy
+                        && p.VideoNombreArchivo != null
+                        && p.VideoNombreArchivo != string.Empty);
+
+        if (!string.IsNullOrWhiteSpace(tipoPantalla))
+        {
+            consulta = consulta.Where(p => p.TipoPantalla == tipoPantalla);
+        }
+
+        var filas = await consulta
+            .OrderBy(p => p.Id)
+            .Select(p => new
+            {
+              p.Id,
+              p.NombrePublicidad,
+              p.VideoNombreArchivo,
+              p.DuracionVideoSegundos,
+              p.FechaInicio,
+              p.FechaFin,
+            })
+            .ToListAsync();
+
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        var sb = new System.Text.StringBuilder();
+        foreach (var p in filas)
+        {
+            sb.Append(p.Id).Append('|')
+              .Append(p.NombrePublicidad).Append('|')
+              .Append(p.VideoNombreArchivo).Append('|')
+              .Append(p.DuracionVideoSegundos).Append('|')
+              .Append(p.FechaInicio.ToString("yyyy-MM-dd")).Append('|')
+              .Append(p.FechaFin.ToString("yyyy-MM-dd")).Append(';');
+        }
+        var bytes = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(sb.ToString()));
+        var hashGlobal = Convert.ToHexString(bytes);
+
+        return Ok(new
+        {
+            tipoPantalla = tipoPantalla ?? string.Empty,
+            total = filas.Count,
+            hash = hashGlobal,
+            servidor = DateTime.UtcNow,
+        });
+    }
+
+    /// <summary>
+    /// Versión rápida GLOBAL de TODAS las publicidades (no solo vigentes,
+    /// y sin filtrar por tipo). Sirve para que el panel detecte altas,
+    /// bajas, ediciones o cambios de video en cualquier publicidad sin
+    /// tener que descargar la lista completa.
+    /// </summary>
+    [HttpGet("version-global")]
+    public async Task<ActionResult<object>> ObtenerVersionGlobal()
+    {
+        var filas = await _context.Publicidades
+            .AsNoTracking()
+            .OrderBy(p => p.Id)
+            .Select(p => new
+            {
+              p.Id,
+              p.NombrePublicidad,
+              p.TipoPantalla,
+              p.VideoNombreArchivo,
+              p.DuracionVideoSegundos,
+              p.FechaInicio,
+              p.FechaFin,
+              p.EmpresaId,
+            })
+            .ToListAsync();
+
+        using var sha = System.Security.Cryptography.SHA256.Create();
+        var sb = new System.Text.StringBuilder();
+        foreach (var p in filas)
+        {
+            sb.Append(p.Id).Append('|')
+              .Append(p.NombrePublicidad).Append('|')
+              .Append(p.TipoPantalla).Append('|')
+              .Append(p.VideoNombreArchivo).Append('|')
+              .Append(p.DuracionVideoSegundos).Append('|')
+              .Append(p.FechaInicio.ToString("yyyy-MM-dd")).Append('|')
+              .Append(p.FechaFin.ToString("yyyy-MM-dd")).Append('|')
+              .Append(p.EmpresaId).Append(';');
+        }
+        var bytes = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(sb.ToString()));
+        var hashGlobal = Convert.ToHexString(bytes);
+
+        return Ok(new
+        {
+            total = filas.Count,
+            hash = hashGlobal,
+            servidor = DateTime.UtcNow,
+        });
+    }
+
     [HttpGet("{id}")]
     public async Task<ActionResult<PublicidadRespuesta>> GetPublicidad(int id)
     {
@@ -289,6 +397,13 @@ public class PublicidadesController : ControllerBase
         try { await _context.SaveChangesAsync(); }
         catch (DbUpdateException) { return Conflict(new { mensaje = "No fue posible actualizar la publicidad." }); }
 
+        // Avisamos a las pantallas del tipo correspondiente para que
+        // refresquen la lista vigente (puede haber pasado de no-vigente
+        // a vigente, o viceversa, según las nuevas fechas).
+        await _hubPantallas.Clients
+            .Group(publicidad.TipoPantalla)
+            .SendAsync("RefrescarVigentes", publicidad.TipoPantalla);
+
         return MapToResponse(publicidad);
     }
 
@@ -330,7 +445,51 @@ public class PublicidadesController : ControllerBase
         publicidad.VideoNombreArchivo = nombreArchivo;
         await _context.SaveChangesAsync();
 
+        // Si el reemplazo afecta a la vigencia (por ejemplo, ahora
+        // sí tiene video y por tanto puede ser "vigente"), refrescamos
+        // las pantallas de este tipo.
+        await _hubPantallas.Clients
+            .Group(publicidad.TipoPantalla)
+            .SendAsync("RefrescarVigentes", publicidad.TipoPantalla);
+
         return MapToResponse(publicidad);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeletePublicidad(int id)
+    {
+        var publicidad = await _context.Publicidades
+            .Include(p => p.Empresa)
+            .FirstOrDefaultAsync(p => p.Id == id);
+        if (publicidad == null) return NotFound();
+
+        // Eliminar el archivo de video asociado, si existe.
+        if (!string.IsNullOrEmpty(publicidad.VideoNombreArchivo))
+        {
+            var rutaVideo = Path.Combine(VideosPath, publicidad.VideoNombreArchivo);
+            if (System.IO.File.Exists(rutaVideo)) System.IO.File.Delete(rutaVideo);
+        }
+
+        var tipoPantalla = publicidad.TipoPantalla;
+        var publicidadId = publicidad.Id;
+
+        _context.Publicidades.Remove(publicidad);
+        await _context.SaveChangesAsync();
+
+        // Avisamos a las pantallas del tipo correspondiente para que
+        // retiren la publicidad del bucle en vivo.
+        await _hubPantallas.Clients
+            .Group(tipoPantalla)
+            .SendAsync("PublicidadRemovida", new
+            {
+                tipoPantalla,
+                publicidadId
+            });
+        await _hubPantallas.Clients
+            .Group(tipoPantalla)
+            .SendAsync("RefrescarVigentes", tipoPantalla);
+
+        return NoContent();
     }
 
     private static PublicidadRespuesta MapToResponse(Publicidad publicidad)

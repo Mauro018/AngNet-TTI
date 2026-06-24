@@ -12,7 +12,7 @@ import {
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 
 import { PublicidadVigente, TipoPantallaPublicidad } from '../shared/models/modelo-publicidad-vigente';
-import { ServicioPublicidadesVigentes } from '../services/servicio-publicidades-vigentes';
+import { ServicioPublicidadesVigentes, VersionVigentes } from '../services/servicio-publicidades-vigentes';
 import { ServicioPantallasSignalR } from '../services/servicio-pantallas-signalr';
 import { Subscription } from 'rxjs';
 
@@ -63,22 +63,35 @@ export class VistaPreviaEnVivoComponent implements OnInit, OnDestroy
   private intervaloRotacion?: number;
   private readonly subscripciones = new Subscription();
 
+  /**
+   * Hash de la última versión consultada al backend (vía endpoint
+   * liviano). Se compara cada 5s para detectar cambios aunque SignalR
+   * no haya llegado o esté fallando.
+   */
+  private hashUltimaVersion = '';
+  /** Timer del polling de respaldo (cada 5s). */
+  private intervaloPolling?: number;
+  /** Evita lanzar varias recargas simultáneas. */
+  private recargando = false;
+
+  // afterNextRender debe invocarse en injection context (constructor o
+  // field initializer). Lo registramos como field initializer para que
+  // el bootstrap se ejecute en el navegador tras el primer render.
+  private readonly bootstrap = afterNextRender(async () =>
+  {
+    // Se suscribe a AMBOS grupos del hub para mantenerse al día con cualquier cambio.
+    for (const tipo of this.tiposPantalla)
+    {
+      try { await this.signalr.unirAPantalla(tipo); } catch { /* sin acciones */ }
+    }
+    this.registrarListeners();
+    this.cargar();
+    this.iniciarPollingVersion();
+  });
+
   ngOnInit(): void
   {
-    if (!isPlatformBrowser(this.platformId)) return;
-
-    // afterNextRender asegura que la vista exista en el navegador y
-    // evita el error "Injector has already been destroyed" durante SSR.
-    afterNextRender(async () =>
-    {
-      // Se suscribe a AMBOS grupos del hub para mantenerse al día con cualquier cambio.
-      for (const tipo of this.tiposPantalla)
-      {
-        try { await this.signalr.unirAPantalla(tipo); } catch { /* sin acciones */ }
-      }
-      this.registrarListeners();
-      this.cargar();
-    });
+    // El bootstrap real se hace en el field initializer `bootstrap`.
   }
 
   ngOnDestroy(): void
@@ -87,6 +100,7 @@ export class VistaPreviaEnVivoComponent implements OnInit, OnDestroy
     {
       clearInterval(this.intervaloRotacion);
     }
+    this.detenerPollingVersion();
     this.subscripciones.unsubscribe();
     if (isPlatformBrowser(this.platformId))
     {
@@ -211,5 +225,92 @@ export class VistaPreviaEnVivoComponent implements OnInit, OnDestroy
         this.mensaje.set('No se pudieron cargar las publicidades vigentes.');
       },
     });
+  }
+
+  // ============================================================
+  // Polling de respaldo (cada 5s) → recarga si cambia el hash
+  // ============================================================
+
+  /**
+   * Polling independiente de SignalR. Cada 5s consulta al endpoint
+   * liviano `version-vigentes`. Si el hash difiere del último conocido
+   * significa que la lista cambió (alta, baja, video reemplazado,
+   * fechas editadas) y recarga la página automáticamente.
+   */
+  private iniciarPollingVersion(): void
+  {
+    if (!isPlatformBrowser(this.platformId)) return;
+    if (this.intervaloPolling) return;
+    console.info('[VistaPrevia] Polling de versión iniciado cada 5s para', this.tipoSeleccionado());
+
+    // Primera consulta inmediata para fijar el hash base.
+    this.consultarVersion();
+
+    this.intervaloPolling = window.setInterval(() => this.consultarVersion(), 5000);
+  }
+
+  private consultarVersion(): void
+  {
+    if (this.recargando) return;
+    this.servicioVigentes.obtenerVersionVigentes(this.tipoSeleccionado()).subscribe({
+      next: (version) =>
+      {
+        console.info('[VistaPrevia] Versión consultada:', { total: version.total, hash: version.hash.substring(0, 12) + '…' });
+        this.detectarCambiosVersion(version);
+      },
+      error: (err) => console.warn('[VistaPrevia] Polling de versión falló, reintentando en 5s:', err),
+    });
+  }
+
+  /** Detiene el polling. */
+  private detenerPollingVersion(): void
+  {
+    if (this.intervaloPolling)
+    {
+      clearInterval(this.intervaloPolling);
+      this.intervaloPolling = undefined;
+    }
+  }
+
+  /**
+   * Compara el hash devuelto por el backend contra el último conocido.
+   * Si difiere, recarga la página.
+   */
+  private detectarCambiosVersion(version: VersionVigentes): void
+  {
+    if (this.hashUltimaVersion && this.hashUltimaVersion !== version.hash)
+    {
+      console.info('[VistaPrevia] Cambio de versión detectado → recargando.', { total: version.total });
+      this.programarRecarga();
+    }
+    else
+    {
+      console.info('[VistaPrevia] Sin cambios en la versión de publicidades.');
+    }
+    this.hashUltimaVersion = version.hash;
+  }
+
+  /** Programa una recarga con un pequeño retardo. */
+  private programarRecarga(): void
+  {
+    if (!isPlatformBrowser(this.platformId)) return;
+    if (this.recargando) return;
+    this.recargando = true;
+    console.info('[VistaPrevia] Programando recarga forzada de la página en 800ms...');
+    setTimeout(() =>
+    {
+      try
+      {
+        // Recarga evitando caché del navegador.
+        const url = new URL(window.location.href);
+        url.searchParams.set('_t', Date.now().toString());
+        window.location.replace(url.toString());
+      }
+      catch (error)
+      {
+        console.error('[VistaPrevia] No se pudo recargar la página:', error);
+        this.recargando = false;
+      }
+    }, 800);
   }
 }

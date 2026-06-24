@@ -52,6 +52,33 @@ export class ServicioPublicidadesVigentes {
       );
   }
 
+  /**
+   * Versión liviana: consulta un endpoint que devuelve únicamente un
+   * hash calculado en el backend sobre los campos que pueden cambiar
+   * (id, nombre, video, duración, fechas). Sirve para que el
+   * reproductor haga un polling barato cada 5s sin descargar la
+   * lista completa.
+   */
+  obtenerVersionVigentes(tipoPantalla?: TipoPantallaPublicidad): Observable<VersionVigentes>
+  {
+    const opciones = tipoPantalla
+      ? { params: { tipoPantalla } }
+      : {};
+    return this.http
+      .get<VersionVigentes>(`${API_URL}/api/publicidades/version-vigentes`, opciones);
+  }
+
+  /**
+   * Versión liviana GLOBAL: hash sobre TODAS las publicidades
+   * (vigentes, vencidas y por tipo). Sirve para que el panel
+   * principal detecte altas, bajas, ediciones o cambios de video
+   * en cualquier publicidad sin descargar la lista completa.
+   */
+  obtenerVersionGlobal(): Observable<VersionGlobal>
+  {
+    return this.http.get<VersionGlobal>(`${API_URL}/api/publicidades/version-global`);
+  }
+
   /** Convierte "/api/..." a URL absoluta usando la base detectada del host. */
   private resolverUrlAbsoluta(url: string): string
   {
@@ -59,4 +86,17 @@ export class ServicioPublicidadesVigentes {
     if (/^https?:\/\//i.test(url)) return url;
     return `${API_URL.replace(/\/$/, '')}${url.startsWith('/') ? '' : '/'}${url}`;
   }
+}
+
+export interface VersionVigentes {
+  tipoPantalla: string;
+  total: number;
+  hash: string;
+  servidor: string;
+}
+
+export interface VersionGlobal {
+  total: number;
+  hash: string;
+  servidor: string;
 }
