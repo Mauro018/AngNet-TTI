@@ -211,27 +211,6 @@ export class PanelPrincipalComponent implements OnInit, OnDestroy {
       .sort((a, b) => b.cantidad - a.cantidad);
   }
 
-  /** Datos para la gráfica de dona: vigentes, por vencer, vencidas (mutuamente excluyentes). */
-  protected get datosDonaPublicidades(): { etiqueta: string; cantidad: number; color: string }[] {
-    const conteo = this.contarEstadosPublicidades();
-    return [
-      { etiqueta: 'Vigentes', cantidad: conteo.vigentes, color: 'var(--success)' },
-      { etiqueta: 'Por vencer', cantidad: conteo.porVencer, color: 'var(--warning)' },
-      { etiqueta: 'Vencidas', cantidad: conteo.vencidas, color: 'var(--danger)' },
-    ].filter((segmento) => segmento.cantidad > 0);
-  }
-
-  /** Leyenda completa de la dona, incluyendo categorías con cantidad cero para identificar siempre los colores. */
-  protected get leyendaDonaPublicidades(): { etiqueta: string; cantidad: number; color: string; porcentaje: number }[] {
-    const conteo = this.contarEstadosPublicidades();
-    const porcentajes = this.calcularPorcentajesDona(conteo.vigentes, conteo.porVencer, conteo.vencidas);
-    return [
-      { etiqueta: 'Vigentes', cantidad: conteo.vigentes, color: 'var(--success)', porcentaje: porcentajes[0] },
-      { etiqueta: 'Por vencer', cantidad: conteo.porVencer, color: 'var(--warning)', porcentaje: porcentajes[1] },
-      { etiqueta: 'Vencidas', cantidad: conteo.vencidas, color: 'var(--danger)', porcentaje: porcentajes[2] },
-    ];
-  }
-
   /** Cuenta publicidades en cada estado de forma disjunta. */
   private contarEstadosPublicidades(): { vigentes: number; porVencer: number; vencidas: number } {
     const publicidades = this.publicidadesRegistradas();
@@ -252,14 +231,48 @@ export class PanelPrincipalComponent implements OnInit, OnDestroy {
       } else if (inicio <= hoy) {
         vigentes++;
       }
-      // Si aún no ha iniciado (inicio > hoy) no se cuenta en la dona de estados.
+      // Si aún no ha iniciado (inicio > hoy) no se cuenta en el gráfico de estados.
     }
 
     return { vigentes, porVencer, vencidas };
   }
 
-  /** Calcula porcentajes que sumen exactamente 100 para la leyenda de la dona. */
-  private calcularPorcentajesDona(vigentes: number, porVencer: number, vencidas: number): number[] {
+  /** Total de publicidades representadas en el gráfico de barras (vigentes + por vencer + vencidas). */
+  protected get totalPublicidadesGrafica(): number {
+    const conteo = this.contarEstadosPublicidades();
+    return conteo.vigentes + conteo.porVencer + conteo.vencidas;
+  }
+
+  /** Datos preparados para la gráfica de barras verticales. */
+  protected get barrasPublicidades(): { etiqueta: string; cantidad: number; color: string; altura: number; porcentaje: number }[] {
+    const conteo = this.contarEstadosPublicidades();
+    const total = this.totalPublicidadesGrafica;
+    const maximo = Math.max(conteo.vigentes, conteo.porVencer, conteo.vencidas);
+    const datos = [
+      { etiqueta: 'Vigentes', cantidad: conteo.vigentes, color: 'var(--success)' },
+      { etiqueta: 'Por vencer', cantidad: conteo.porVencer, color: 'var(--warning)' },
+      { etiqueta: 'Vencidas', cantidad: conteo.vencidas, color: 'var(--danger)' },
+    ];
+    const porcentajes = this.calcularPorcentajesGrafica(conteo.vigentes, conteo.porVencer, conteo.vencidas);
+
+    return datos.map((item, indice) => ({
+      ...item,
+      altura: maximo === 0 ? 0 : (item.cantidad / maximo) * 100,
+      porcentaje: porcentajes[indice],
+    }));
+  }
+
+  /** Escala numérica del eje Y según el valor máximo. */
+  protected get escalaBarrasPublicidades(): { maximo: number; medio: number } {
+    const barras = this.barrasPublicidades;
+    const maximo = Math.max(...barras.map((b) => b.cantidad), 1);
+    const redondeo = Math.pow(10, Math.floor(Math.log10(maximo)));
+    const tope = Math.ceil(maximo / redondeo) * redondeo;
+    return { maximo: tope, medio: Math.round(tope / 2) };
+  }
+
+  /** Calcula porcentajes que sumen exactamente 100 para el gráfico de barras. */
+  private calcularPorcentajesGrafica(vigentes: number, porVencer: number, vencidas: number): number[] {
     const total = vigentes + porVencer + vencidas;
     if (total === 0) return [0, 0, 0];
 
@@ -345,11 +358,6 @@ export class PanelPrincipalComponent implements OnInit, OnDestroy {
     this.resetPagina(this.paginaPublicidadesVencidas);
   }
 
-  /** Total de publicidades representadas en la dona (vigentes + por vencer + vencidas). */
-  protected get totalPublicidadesDona(): number {
-    return this.datosDonaPublicidades.reduce((suma, segmento) => suma + segmento.cantidad, 0);
-  }
-
   // ─── Helpers de paginación ───
 
   protected paginar<T>(elementos: T[], pagina: number): T[] {
@@ -378,35 +386,6 @@ export class PanelPrincipalComponent implements OnInit, OnDestroy {
 
   protected resetPagina(signalPagina: ReturnType<typeof signal<number>>): void {
     signalPagina.set(1);
-  }
-
-  /** Calcula el arco de cada segmento de la dona; el total de arcos + huecos cierra el círculo al 100%. */
-  protected calcularArcoDona(cantidad: number): string {
-    const total = this.totalPublicidadesDona;
-    const circunferencia = 2 * Math.PI * 70;
-    if (total === 0) return `0 ${circunferencia}`;
-
-    const datos = this.datosDonaPublicidades;
-    const hueco = datos.length > 1 ? 2 : 0;
-    const arcoUtil = circunferencia - datos.length * hueco;
-    const longitud = (cantidad / total) * arcoUtil;
-    return `${longitud} ${circunferencia}`;
-  }
-
-  /** Calcula el desplazamiento acumulado para cada segmento de la dona. */
-  protected calcularDesplazamientoDona(indice: number): number {
-    const total = this.totalPublicidadesDona;
-    const circunferencia = 2 * Math.PI * 70;
-    if (total === 0) return circunferencia;
-
-    const datos = this.datosDonaPublicidades;
-    const hueco = datos.length > 1 ? 2 : 0;
-    const arcoUtil = circunferencia - datos.length * hueco;
-    let acumulado = 0;
-    for (let i = 0; i < indice; i++) {
-      acumulado += (datos[i].cantidad / total) * arcoUtil + hueco;
-    }
-    return circunferencia - acumulado;
   }
 
   // Recalcula el aviso visual de publicidades próximas a vencer.

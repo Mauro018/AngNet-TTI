@@ -38,46 +38,46 @@
             </div>
           </article>
 
-          <!-- Dona de publicidades -->
+          <!-- Gráfica de barras de publicidades -->
           <article class="tarjeta-estadistica tarjeta-estadistica--grafica">
             <header class="tarjeta-estadistica__encabezado">
               <h3>Estado de publicidades</h3>
+              <span class="tarjeta-estadistica__insignia">{{ totalPublicidadesGrafica }} publicidad{{ totalPublicidadesGrafica !== 1 ? 'es' : '' }}</span>
             </header>
 
-            <div class="contenedor-dona">
-              <figure class="grafica-dona" aria-label="Gráfica de dona de publicidades">
-                <svg viewBox="0 0 200 200" class="svg-dona">
-                  <circle cx="100" cy="100" r="70" fill="none" stroke="var(--border)" stroke-width="30" />
-                  @for (segmento of datosDonaPublicidades; let i = $index; track segmento.etiqueta) {
-                    <circle
-                      cx="100"
-                      cy="100"
-                      r="70"
-                      fill="none"
-                      [attr.stroke]="segmento.color"
-                      stroke-width="30"
-                      [attr.stroke-dasharray]="calcularArcoDona(segmento.cantidad)"
-                      [attr.stroke-dashoffset]="calcularDesplazamientoDona(i)"
-                      transform="rotate(-90 100 100)"
-                    />
-                  }
-                </svg>
-                <figcaption class="total-dona">
-                  <strong>{{ totalPublicidadesDona }}</strong>
-                  <span>Total</span>
-                </figcaption>
-              </figure>
+            <div class="contenedor-barras">
+              <div class="grafica-barras" aria-label="Gráfica de barras de publicidades">
+                <div class="grafica-barras__eje-y">
+                  <span>{{ escalaBarrasPublicidades.maximo }}</span>
+                  <span>{{ escalaBarrasPublicidades.medio }}</span>
+                  <span>0</span>
+                </div>
 
-              <ul class="leyenda-dona">
-                @for (item of leyendaDonaPublicidades; track item.etiqueta) {
-                  <li class="leyenda-dona__elemento">
-                    <span class="leyenda-dona__punto" [style.background]="item.color"></span>
-                    <span class="leyenda-dona__etiqueta">{{ item.etiqueta }}</span>
-                    <span class="leyenda-dona__valor">{{ item.cantidad }}</span>
-                    <span class="leyenda-dona__porcentaje" [style.color]="item.color">{{ item.porcentaje }}%</span>
-                  </li>
-                }
-              </ul>
+                <div class="grafica-barras__area">
+                  <div class="grafica-barras__lineas-horizontales">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+
+                  <div class="grafica-barras__columnas">
+                    @for (barra of barrasPublicidades; track barra.etiqueta) {
+                      <div class="grafica-barras__columna" [class.grafica-barras__columna--cero]="barra.cantidad === 0">
+                        <div class="grafica-barras__barra-wrapper">
+                          <div
+                            class="grafica-barras__barra"
+                            [style.height.%]="barra.altura"
+                            [style.background-color]="barra.color">
+                            </div>
+                        </div>
+                        <span class="grafica-barras__cantidad" [style.color]="barra.color">{{ barra.cantidad }}</span>
+                        <span class="grafica-barras__etiqueta">{{ barra.etiqueta }}</span>
+                        <span class="grafica-barras__porcentaje">{{ barra.porcentaje }}%</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </div>
             </div>
           </article>
         </section>
