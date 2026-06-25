@@ -4,18 +4,252 @@
   (sectionSelected)="establecerSeccionActiva($event)"
 ></app-navbar>
 
-<main class="dashboard-shell">
+<main class="panel-principal-shell">
   @switch (seccionActiva()) {
     @case ('Inicio') {
-      <section class="workspace home-view">
-        <section class="home-summary" aria-label="Resumen">
-          <div class="home-summary__intro">
-            <span class="home-summary__eyebrow"><app-heroe [todayLabel]="todayLabel"></app-heroe></span>
-            <app-resumen
-              [statusCards]="tarjetasEstadoInicio"
-              [metricCards]="tarjetasMetricasInicio"
-            />
-          </div>
+      <section class="workspace vista-inicio">
+        <app-heroe [todayLabel]="todayLabel"></app-heroe>
+
+        <!-- Fila superior: tabla de empresas + dona de publicidades -->
+        <section class="fila-superior-estadisticas">
+          <!-- Total de empresas por sector -->
+          <article class="tarjeta-estadistica tarjeta-estadistica--tabla">
+            <header class="tarjeta-estadistica__encabezado">
+              <h3>Total de empresas</h3>
+              <span class="tarjeta-estadistica__insignia">{{ totalEmpresas }} empresa{{ totalEmpresas !== 1 ? 's' : '' }}</span>
+            </header>
+
+            <div class="contenedor-tabla-estadistica">
+              <div class="tabla-estadistica tabla-estadistica--2col">
+                <div class="tabla-estadistica__encabezado">
+                  <span>Sector de industria</span>
+                  <span>Cantidad</span>
+                </div>
+                @for (fila of empresasPorSector; track fila.sector) {
+                  <div class="tabla-estadistica__fila">
+                    <span>{{ fila.label }}</span>
+                    <span class="tabla-estadistica__valor">{{ fila.cantidad }}</span>
+                  </div>
+                }
+                @if (empresasPorSector.length === 0) {
+                  <div class="tabla-estadistica__vacia">No hay empresas registradas.</div>
+                }
+              </div>
+            </div>
+          </article>
+
+          <!-- Dona de publicidades -->
+          <article class="tarjeta-estadistica tarjeta-estadistica--grafica">
+            <header class="tarjeta-estadistica__encabezado">
+              <h3>Estado de publicidades</h3>
+            </header>
+
+            <div class="contenedor-dona">
+              <figure class="grafica-dona" aria-label="Gráfica de dona de publicidades">
+                <svg viewBox="0 0 200 200" class="svg-dona">
+                  <circle cx="100" cy="100" r="70" fill="none" stroke="var(--border)" stroke-width="30" />
+                  @for (segmento of datosDonaPublicidades; let i = $index; track segmento.etiqueta) {
+                    <circle
+                      cx="100"
+                      cy="100"
+                      r="70"
+                      fill="none"
+                      [attr.stroke]="segmento.color"
+                      stroke-width="30"
+                      [attr.stroke-dasharray]="calcularArcoDona(segmento.cantidad)"
+                      [attr.stroke-dashoffset]="calcularDesplazamientoDona(i)"
+                      transform="rotate(-90 100 100)"
+                    />
+                  }
+                </svg>
+                <figcaption class="total-dona">
+                  <strong>{{ totalPublicidadesDona }}</strong>
+                  <span>Total</span>
+                </figcaption>
+              </figure>
+
+              <ul class="leyenda-dona">
+                @for (item of leyendaDonaPublicidades; track item.etiqueta) {
+                  <li class="leyenda-dona__elemento">
+                    <span class="leyenda-dona__punto" [style.background]="item.color"></span>
+                    <span class="leyenda-dona__etiqueta">{{ item.etiqueta }}</span>
+                    <span class="leyenda-dona__valor">{{ item.cantidad }}</span>
+                    <span class="leyenda-dona__porcentaje" [style.color]="item.color">{{ item.porcentaje }}%</span>
+                  </li>
+                }
+              </ul>
+            </div>
+          </article>
+        </section>
+
+        <!-- Fila inferior: tres tablas pequeñas con paginación -->
+        <section class="fila-inferior-estadisticas">
+          <!-- Empresas con cantidad de publicidades -->
+          <article class="tarjeta-estadistica tarjeta-estadistica--tabla tarjeta-estadistica--pequena">
+            <header class="tarjeta-estadistica__encabezado">
+              <h3>Empresas y publicidades</h3>
+              <span class="tarjeta-estadistica__insignia">{{ empresasConConteoPublicidades.length }}</span>
+            </header>
+
+            <div class="contenedor-tabla-estadistica">
+              <div class="tabla-estadistica tabla-estadistica--2col">
+                <div class="tabla-estadistica__encabezado">
+                  <span>Empresa</span>
+                  <span>Publicidades</span>
+                </div>
+                @for (fila of paginar(empresasConConteoPublicidades, paginaEmpresasConPublicidades()); track fila.id) {
+                  <div class="tabla-estadistica__fila">
+                    <span>{{ fila.nombre }}</span>
+                    <span class="tabla-estadistica__valor">{{ fila.cantidad }}</span>
+                  </div>
+                }
+                @if (empresasConConteoPublicidades.length === 0) {
+                  <div class="tabla-estadistica__vacia">No hay empresas registradas.</div>
+                }
+              </div>
+            </div>
+
+            <nav class="paginador-estadisticas" *ngIf="totalPaginas(empresasConConteoPublicidades.length) > 1"
+                 aria-label="Paginación empresas con publicidades">
+              <button
+                class="boton-pagina boton-pagina--navegacion"
+                [disabled]="paginaEmpresasConPublicidades() === 1"
+                (click)="paginaAnterior(empresasConConteoPublicidades.length, paginaEmpresasConPublicidades)">
+                ‹
+              </button>
+              <span class="paginador-estadisticas__info">
+                Página {{ paginaEmpresasConPublicidades() }} de {{ totalPaginas(empresasConConteoPublicidades.length) }}
+              </span>
+              <button
+                class="boton-pagina boton-pagina--navegacion"
+                [disabled]="paginaEmpresasConPublicidades() === totalPaginas(empresasConConteoPublicidades.length)"
+                (click)="paginaSiguiente(empresasConConteoPublicidades.length, paginaEmpresasConPublicidades)">
+                ›
+              </button>
+            </nav>
+          </article>
+
+          <!-- Empresas inactivas -->
+          <article class="tarjeta-estadistica tarjeta-estadistica--tabla tarjeta-estadistica--pequena">
+            <header class="tarjeta-estadistica__encabezado">
+              <h3>Empresas inactivas</h3>
+              <span class="tarjeta-estadistica__insignia tarjeta-estadistica__insignia--peligro">{{ empresasInactivas.length }}</span>
+            </header>
+
+            <div class="contenedor-tabla-estadistica">
+              <div class="tabla-estadistica tabla-estadistica--2col">
+                <div class="tabla-estadistica__encabezado">
+                  <span>ID</span>
+                  <span>Nombre</span>
+                </div>
+                @for (empresa of paginar(empresasInactivas, paginaEmpresasInactivas()); track empresa.id) {
+                  <div class="tabla-estadistica__fila">
+                    <span>#{{ empresa.id }}</span>
+                    <span>{{ empresa.nombre }}</span>
+                  </div>
+                }
+                @if (empresasInactivas.length === 0) {
+                  <div class="tabla-estadistica__vacia">No hay empresas inactivas.</div>
+                }
+              </div>
+            </div>
+
+            <nav class="paginador-estadisticas" *ngIf="totalPaginas(empresasInactivas.length) > 1"
+                 aria-label="Paginación empresas inactivas">
+              <button
+                class="boton-pagina boton-pagina--navegacion"
+                [disabled]="paginaEmpresasInactivas() === 1"
+                (click)="paginaAnterior(empresasInactivas.length, paginaEmpresasInactivas)">
+                ‹;
+              </button>
+              <span class="paginador-estadisticas__info">
+                Página {{ paginaEmpresasInactivas() }} de {{ totalPaginas(empresasInactivas.length) }}
+              </span>
+              <button
+                class="boton-pagina boton-pagina--navegacion"
+                [disabled]="paginaEmpresasInactivas() === totalPaginas(empresasInactivas.length)"
+                (click)="paginaSiguiente(empresasInactivas.length, paginaEmpresasInactivas)">
+                ›;
+              </button>
+            </nav>
+          </article>
+
+          <!-- Publicidades vencidas -->
+          <article class="tarjeta-estadistica tarjeta-estadistica--tabla tarjeta-estadistica--pequena">
+            <header class="tarjeta-estadistica__encabezado">
+              <h3>Publicidades vencidas</h3>
+              <span class="tarjeta-estadistica__insignia tarjeta-estadistica__insignia--peligro">{{ publicidadesVencidasConEmpresa.length }}</span>
+            </header>
+
+            <div class="filtros-publicidades-vencidas">
+              <div class="campo-filtro">
+                <label for="anio-vencidas">Año</label>
+                <select id="anio-vencidas" [ngModel]="anioFiltroPublicidadesVencidas()" (ngModelChange)="cambiarAnioVencidas($event)">
+                  <option value="">Todos</option>
+                  @for (anio of aniosDisponiblesVencidas; track anio) {
+                    <option [value]="anio">{{ anio }}</option>
+                  }
+                </select>
+              </div>
+
+              <div class="campo-filtro">
+                <label for="mes-vencidas">Mes</label>
+                <select id="mes-vencidas" [ngModel]="mesFiltroPublicidadesVencidas()" (ngModelChange)="cambiarMesVencidas($event)">
+                  <option value="">Todos</option>
+                  @for (mes of nombresMeses; track mes.valor) {
+                    <option [value]="mes.valor">{{ mes.nombre }}</option>
+                  }
+                </select>
+              </div>
+
+              @if (anioFiltroPublicidadesVencidas() || mesFiltroPublicidadesVencidas()) {
+                <button class="boton-limpiar-filtros" type="button" (click)="limpiarFiltrosVencidas()">Limpiar</button>
+              }
+            </div>
+
+            <div class="contenedor-tabla-estadistica">
+              <div class="tabla-estadistica tabla-estadistica--2col">
+                <div class="tabla-estadistica__encabezado">
+                  <span>Empresa</span>
+                  <span>Venció</span>
+                </div>
+                @for (pub of paginar(publicidadesVencidasFiltradas, paginaPublicidadesVencidas()); track pub.id) {
+                  <div class="tabla-estadistica__fila tabla-estadistica__fila--peligro">
+                    <span>{{ pub.empresaNombre }}</span>
+                    <span>{{ pub.fechaFin }}</span>
+                  </div>
+                }
+                @if (publicidadesVencidasFiltradas.length === 0) {
+                  <div class="tabla-estadistica__vacia">No hay publicidades vencidas para el filtro seleccionado.</div>
+                }
+              </div>
+            </div>
+
+            @if (anioFiltroPublicidadesVencidas() || mesFiltroPublicidadesVencidas()) {
+              <p class="resultados-filtro">
+                Mostrando {{ publicidadesVencidasFiltradas.length }} de {{ publicidadesVencidasConEmpresa.length }} vencidas
+              </p>
+            }
+
+            <nav class="paginador-estadisticas" *ngIf="totalPaginas(publicidadesVencidasFiltradas.length) > 1"
+                 aria-label="Paginación publicidades vencidas">
+              <button
+                class="boton-pagina boton-pagina--navegacion"
+                [disabled]="paginaPublicidadesVencidas() === 1"
+                (click)="paginaAnterior(publicidadesVencidasFiltradas.length, paginaPublicidadesVencidas)">
+                ‹;
+              </button>
+              <span class="paginador-estadisticas__info">
+                Página {{ paginaPublicidadesVencidas() }} de {{ totalPaginas(publicidadesVencidasFiltradas.length) }}
+              </span>
+              <button
+                class="boton-pagina boton-pagina--navegacion"
+                [disabled]="paginaPublicidadesVencidas() === totalPaginas(publicidadesVencidasFiltradas.length)"
+                (click)="paginaSiguiente(publicidadesVencidasFiltradas.length, paginaPublicidadesVencidas)">
+                ›;
+              </button>
+            </nav>
+          </article>
         </section>
       </section>
     }
