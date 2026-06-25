@@ -1,8 +1,8 @@
 import { Component, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Empresa, SectorIndustriaEmpresa } from '../shared/models/modelo-publicidad';
-import { InputFilterDirective } from '../shared/directives/input-filter.directive';
+import { Empresa, SectorIndustriaEmpresa } from '../../../shared/models/modelo-publicidad';
+import { InputFilterDirective } from '../../../shared/directives/input-filter.directive';
 
 @Component({
   selector: 'app-formulario-empresa',

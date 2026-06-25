@@ -4,18 +4,18 @@ import { Component, OnDestroy, OnInit, afterNextRender, inject, signal } from '@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { Empresa, Publicidad, SectorIndustriaEmpresa, TarjetaEstado, TarjetaMetrica } from '../shared/models/modelo-publicidad';
-import { EmpresaService } from '../services/empresa';
-import { EditarPublicidadEntrada, NuevaPublicidadEntrada, PublicidadService } from '../services/publicidad';
-import { ServicioPublicidadesVigentes, VersionGlobal } from '../services/servicio-publicidades-vigentes';
-import { HeroeComponent } from './heroe.component';
-import { Navbar, SeccionNavegacion } from './navbar.component';
-import { FormularioEmpresaComponent } from './formulario-empresa.component';
-import { ListaEmpresasComponent } from './lista-empresas.component';
-import { FormularioPublicidadComponent } from './formulario-publicidad.component';
-import { ListaPublicidadesComponent } from './lista-publicidades.component';
-import { VistaPreviaEnVivoComponent } from '../vista-previa/vista-previa.component';
-import { PanelPantallasComponent } from './panel-pantallas.component';
+import { Empresa, Publicidad, SectorIndustriaEmpresa, TarjetaEstado, TarjetaMetrica } from '../../shared/models/modelo-publicidad';
+import { EmpresaService } from '../../services/empresa';
+import { EditarPublicidadEntrada, NuevaPublicidadEntrada, PublicidadService } from '../../services/publicidad';
+import { ServicioPublicidadesVigentes, VersionGlobal } from '../../services/servicio-publicidades-vigentes';
+import { HeroeComponent } from '../layout/heroe/heroe.component';
+import { Navbar, SeccionNavegacion } from '../layout/navbar/navbar.component';
+import { FormularioEmpresaComponent } from '../empresas/formulario-empresa/formulario-empresa.component';
+import { ListaEmpresasComponent } from '../empresas/lista-empresas/lista-empresas.component';
+import { FormularioPublicidadComponent } from '../publicidades/formulario-publicidad/formulario-publicidad.component';
+import { ListaPublicidadesComponent } from '../publicidades/lista-publicidades/lista-publicidades.component';
+import { VistaPreviaEnVivoComponent } from '../../vista-previa/vista-previa.component';
+import { PanelPantallasComponent } from '../pantallas/panel-pantallas/panel-pantallas.component';
 
 @Component({
   selector: 'app-panel-principal',

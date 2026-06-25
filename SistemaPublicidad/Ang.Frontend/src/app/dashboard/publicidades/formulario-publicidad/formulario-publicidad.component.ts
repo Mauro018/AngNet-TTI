@@ -4,10 +4,10 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { Empresa, Publicidad, TipoPantallaPublicidad } from '../shared/models/modelo-publicidad';
-import { EditarPublicidadEntrada, NuevaPublicidadEntrada, PublicidadService } from '../services/publicidad';
-import { PreciosService, PrecioApi } from '../services/precios';
-import { InputFilterDirective } from '../shared/directives/input-filter.directive';
+import { Empresa, Publicidad, TipoPantallaPublicidad } from '../../../shared/models/modelo-publicidad';
+import { EditarPublicidadEntrada, NuevaPublicidadEntrada, PublicidadService } from '../../../services/publicidad';
+import { PreciosService, PrecioApi } from '../../../services/precios';
+import { InputFilterDirective } from '../../../shared/directives/input-filter.directive';
 
 @Component({
   selector: 'app-formulario-publicidad',

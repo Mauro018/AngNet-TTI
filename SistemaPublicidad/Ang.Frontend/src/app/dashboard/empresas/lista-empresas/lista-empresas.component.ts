@@ -2,7 +2,7 @@
 import { Component, EventEmitter, Input, Output, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Empresa } from '../shared/models/modelo-publicidad';
+import { Empresa } from '../../../shared/models/modelo-publicidad';
 
 @Component({
   selector: 'app-lista-empresas',

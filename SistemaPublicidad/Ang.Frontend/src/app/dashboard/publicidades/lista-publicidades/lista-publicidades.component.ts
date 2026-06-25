@@ -2,8 +2,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, OnChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Publicidad } from '../shared/models/modelo-publicidad';
-import { PublicidadService } from '../services/publicidad';
+import { Publicidad } from '../../../shared/models/modelo-publicidad';
+import { PublicidadService } from '../../../services/publicidad';
 
 @Component({
   selector: 'app-lista-publicidades',

@@ -9,8 +9,8 @@ import {
 import { CommonModule, DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { ServicioPantallasSignalR } from '../services/servicio-pantallas-signalr';
-import { TipoPantallaPublicidad } from '../shared/models/modelo-publicidad-vigente';
+import { ServicioPantallasSignalR } from '../../../services/servicio-pantallas-signalr';
+import { TipoPantallaPublicidad } from '../../../shared/models/modelo-publicidad-vigente';
 
 /**
  * Tipos de pantalla que se muestran como tarjetas con un enlace

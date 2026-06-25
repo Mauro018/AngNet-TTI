@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { ServerRoute, RenderMode } from '@angular/ssr';
-import { PanelPrincipalComponent } from '../dashboard/panel-principal.component';
+import { PanelPrincipalComponent } from '../dashboard/panel-principal/panel-principal.component';
 
 /**
  * Rutas de la SPA.
