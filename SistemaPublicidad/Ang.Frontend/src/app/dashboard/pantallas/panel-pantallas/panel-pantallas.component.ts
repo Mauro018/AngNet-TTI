@@ -73,20 +73,20 @@ export class PanelPantallasComponent
     const origen = this.document.defaultView?.location.origin ?? '';
     this.tarjetas.set([
       {
-        id: 'VerticalSamsung',
-        titulo: 'Pantalla Vertical Samsung',
+        id: 'Vertical',
+        titulo: 'Pantalla Vertical',
         descripcion: 'Pantalla en formato vertical (9:16) ideal para tótems.',
         orientacion: 'vertical',
-        url: `${origen}/pantalla/VerticalSamsung`,
-        qr: this.generarQrTexto(`${origen}/pantalla/VerticalSamsung`),
+        url: `${origen}/pantalla/Vertical`,
+        qr: this.generarQrTexto(`${origen}/pantalla/Vertical`),
       },
       {
-        id: 'HorizontalDescenso',
-        titulo: 'Pantalla Horizontal Descenso',
+        id: 'Horizontal',
+        titulo: 'Pantalla Horizontal',
         descripcion: 'Pantalla en formato horizontal apaisado (16:9).',
         orientacion: 'horizontal',
-        url: `${origen}/pantalla/HorizontalDescenso`,
-        qr: this.generarQrTexto(`${origen}/pantalla/HorizontalDescenso`),
+        url: `${origen}/pantalla/Horizontal`,
+        qr: this.generarQrTexto(`${origen}/pantalla/Horizontal`),
       },
     ]);
   }
@@ -174,10 +174,10 @@ export class PanelPantallasComponent
     const identificador = (this.identificadorPantalla() || '').trim() || `Pantalla-${ip}`;
     const protocolo = this.document.defaultView?.location.protocol ?? 'http:';
     const puerto = this.document.defaultView?.location.port ? `:${this.document.defaultView.location.port}` : '';
-    const url = `${protocolo}//${ip}${puerto}/pantalla/VerticalSamsung?cliente=${encodeURIComponent(identificador)}`;
+    const url = `${protocolo}//${ip}${puerto}/pantalla/Vertical?cliente=${encodeURIComponent(identificador)}`;
 
     const tarjeta: TarjetaPantalla = {
-      id: 'VerticalSamsung',
+      id: 'Vertical',
       titulo: `Pantalla registrada: ${identificador}`,
       descripcion: `Abre el siguiente enlace en el dispositivo con IP ${ip}.`,
       orientacion: 'vertical',

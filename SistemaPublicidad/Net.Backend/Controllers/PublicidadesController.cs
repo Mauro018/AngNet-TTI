@@ -14,8 +14,8 @@ public class PublicidadesController : ControllerBase
     private static readonly HashSet<int> DuracionesVideoPermitidas = new() { 10, 15, 20, 25, 30 };
     private static readonly HashSet<string> TiposPantallaPermitidos = new(StringComparer.OrdinalIgnoreCase)
     {
-        "VerticalSamsung",
-        "HorizontalDescenso",
+        "Vertical",
+        "Horizontal",
     };
     private static readonly string[] VideoExtensionesPermitidas = [".mp4", ".mov", ".avi", ".mkv", ".webm"];
     private static readonly long VideoTamanoMaxBytes = 200 * 1024 * 1024; // 200 MB
@@ -32,7 +32,7 @@ public class PublicidadesController : ControllerBase
 
     private string VideosPath => Path.Combine(_env.ContentRootPath, "Videos");
 
-    // GET: api/publicidades/vigentes?tipoPantalla=VerticalSamsung
+    // GET: api/publicidades/vigentes?tipoPantalla=Vertical
     // Devuelve únicamente las publicidades cuya fecha de inicio ya comenzó,
     // que aún no han vencido y que tienen un video asociado. Es la fuente
     // de datos que consumen el player y la vista previa en vivo.

@@ -16,6 +16,16 @@ export const rutas: Routes = [
     title: 'Panel de publicidades',
   },
   {
+    path: 'pantalla/VerticalSamsung',
+    redirectTo: 'pantalla/Vertical',
+    pathMatch: 'full',
+  },
+  {
+    path: 'pantalla/HorizontalDescenso',
+    redirectTo: 'pantalla/Horizontal',
+    pathMatch: 'full',
+  },
+  {
     path: 'pantalla/:tipoPantalla',
     loadComponent: () =>
       import('../reproductor/reproductor-pantalla').then(

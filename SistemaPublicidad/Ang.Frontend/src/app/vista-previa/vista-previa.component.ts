@@ -40,12 +40,12 @@ export class VistaPreviaEnVivoComponent implements OnInit, OnDestroy
 
   /** Tipos de pantalla disponibles. */
   protected readonly tiposPantalla: TipoPantallaPublicidad[] = [
-    'VerticalSamsung',
-    'HorizontalDescenso',
+    'Vertical',
+    'Horizontal',
   ];
 
   /** Tipo de pantalla que el usuario está previsualizando. */
-  protected readonly tipoSeleccionado = signal<TipoPantallaPublicidad>('VerticalSamsung');
+  protected readonly tipoSeleccionado = signal<TipoPantallaPublicidad>('Vertical');
 
   /** Publicidades vigentes del tipo seleccionado. */
   protected readonly publicidades = signal<PublicidadVigente[]>([]);

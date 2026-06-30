@@ -12,11 +12,11 @@ import {
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, Subject, takeUntil } from 'rxjs';
 
 import { PublicidadVigente, TipoPantallaPublicidad } from '../shared/models/modelo-publicidad-vigente';
 import { ServicioPublicidadesVigentes } from '../services/servicio-publicidades-vigentes';
-import { ServicioPantallasSignalR } from '../services/servicio-pantallas-signalr';
+import { ServicioPantallasSignalR, EstadoReproduccionPantalla } from '../services/servicio-pantallas-signalr';
 
 /**
  * Reproductor a pantalla completa pensado para TVs, monitores externos
@@ -56,7 +56,7 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
   private listenerBeforeUnload?: () => void;
 
   /** Tipo de pantalla recibido por la URL. */
-  protected readonly tipoPantalla = signal<TipoPantallaPublicidad>('VerticalSamsung');
+  protected readonly tipoPantalla = signal<TipoPantallaPublicidad>('Vertical');
 
   /** Cola de publicidades que se reproducen en bucle. */
   protected readonly cola = signal<PublicidadVigente[]>([]);
@@ -70,6 +70,11 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
   protected readonly reproduciendo = signal<boolean>(false);
   /** Indica si estamos actualmente en modo pantalla completa. */
   protected readonly enPantallaCompleta = signal<boolean>(false);
+  /** Indica si esta instancia es el líder de sincronización de su tipo. */
+  protected readonly esLider = signal<boolean>(false);
+
+  private intervaloReporteLider?: number;
+  private readonly sujetoDestruccion$ = new Subject<void>();
 
   // afterNextRender debe invocarse en injection context (constructor o
   // field initializer). Por eso lo programamos como field initializer;
@@ -133,12 +138,15 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
       window.addEventListener('beforeunload', this.listenerBeforeUnload);
     }
 
-    // Nos unimos al hub por si SignalR llega a funcionar, pero
-    // NO confiamos en él: la fuente de verdad para recargar es
-    // el polling HTTP que se inicia más abajo. Esto evita que
-    // una conexión SignalR caída, un proxy intermedio, o un
-    // cambio directo en BD bloquee la recarga automática.
-    try { await this.signalr.unirAPantalla(this.tipoPantalla()); } catch { /* sin acciones */ }
+    // Nos unimos al hub para sincronizar la reproducción con otras
+    // pantallas del mismo tipo. El polling HTTP sigue siendo el respaldo
+    // para detectar cambios en la lista de publicidades.
+    try
+    {
+      this.configurarSincronizacion();
+      await this.signalr.unirAPantalla(this.tipoPantalla(), this.identificadorPantalla());
+    }
+    catch { /* sin acciones */ }
 
     // ==========================================================
     // Mecanismo PRINCIPAL: polling cada 5 s contra el backend.
@@ -158,12 +166,31 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
 
   ngOnInit(): void
   {
-    const tipo = (this.ruta.snapshot.paramMap.get('tipoPantalla') ?? this.ruta.snapshot.queryParamMap.get('tipo') ?? 'VerticalSamsung') as TipoPantallaPublicidad;
+    const tipo = (this.ruta.snapshot.paramMap.get('tipoPantalla') ?? this.ruta.snapshot.queryParamMap.get('tipo') ?? 'Vertical') as TipoPantallaPublicidad;
     this.tipoPantalla.set(tipo);
+
+    const identificador = this.ruta.snapshot.queryParamMap.get('cliente')?.trim()
+      || this.ruta.snapshot.queryParamMap.get('id')?.trim()
+      || `pantalla-${tipo}-${this.generarIdCorto()}`;
+    this.identificadorPantalla.set(identificador);
 
     // El bootstrap real (petición HTTP, listeners, polling) se hace
     // en el field initializer `bootstrap` usando afterNextRender, que
     // SÍ está en injection context.
+  }
+
+  private generarIdCorto(): string
+  {
+    try
+    {
+      const array = new Uint32Array(2);
+      crypto.getRandomValues(array);
+      return array[0].toString(36) + array[1].toString(36);
+    }
+    catch
+    {
+      return Math.random().toString(36).slice(2, 10);
+    }
   }
 
   /**
@@ -213,8 +240,12 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
   {
     this.subscripciones.unsubscribe();
     this.detenerPollingVigentes();
+    this.detenerReporteLider();
+    this.sujetoDestruccion$.next();
+    this.sujetoDestruccion$.complete();
     if (isPlatformBrowser(this.platformId))
     {
+      this.signalr.detenerReproduccion(this.tipoPantalla()).catch(() => undefined);
       this.signalr.desunirDePantalla(this.tipoPantalla());
       if (this.listenerFullscreenChange)
       {
@@ -257,6 +288,131 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
         );
       },
     });
+  }
+
+  /**
+   * Suscribe esta pantalla a los eventos de sincronización del hub.
+   * La primera pantalla conectada de cada tipo se convierte en líder
+   * y reporta periódicamente su estado; el resto lo recibe y ajusta
+   * su reproducción para mantenerse alineada.
+   */
+  private configurarSincronizacion(): void
+  {
+    this.signalr.eresLider$
+      .pipe(takeUntil(this.sujetoDestruccion$))
+      .subscribe((tipo) =>
+      {
+        if (tipo !== this.tipoPantalla()) return;
+        console.info('[Reproductor] Esta pantalla es ahora el líder de', tipo);
+        this.esLider.set(true);
+        this.iniciarReporteLider();
+      });
+
+    this.signalr.estadoReproduccion$
+      .pipe(takeUntil(this.sujetoDestruccion$))
+      .subscribe((estado) =>
+      {
+        if (estado.tipoPantalla !== this.tipoPantalla() || this.esLider()) return;
+        this.aplicarEstadoSeguidor(estado);
+      });
+
+    this.signalr.solicitarEstado$
+      .pipe(takeUntil(this.sujetoDestruccion$))
+      .subscribe((tipo) =>
+      {
+        if (tipo !== this.tipoPantalla() || !this.esLider() || !this.reproduciendo()) return;
+        this.reportarEstadoComoLider(true);
+      });
+
+    // Al unirnos, pedimos el estado actual para alinearnos si ya hay reproducción.
+    this.signalr.solicitarEstadoActual(this.tipoPantalla()).catch(() => undefined);
+  }
+
+  private iniciarReporteLider(): void
+  {
+    if (this.intervaloReporteLider) return;
+    // Reporte inmediato al asumir liderazgo.
+    this.reportarEstadoComoLider(true);
+    // Reporte periódico para mantener a los seguidores sincronizados.
+    this.intervaloReporteLider = window.setInterval(() => this.reportarEstadoComoLider(false), 1000);
+  }
+
+  private detenerReporteLider(): void
+  {
+    if (this.intervaloReporteLider)
+    {
+      clearInterval(this.intervaloReporteLider);
+      this.intervaloReporteLider = undefined;
+    }
+    this.esLider.set(false);
+  }
+
+  private reportarEstadoComoLider(forzado: boolean): void
+  {
+    if (!this.esLider() || !this.reproduciendo()) return;
+    const pub = this.actual();
+    const video = this.videoRef?.nativeElement;
+    if (!pub || !video) return;
+
+    // En reproducciones normales reportamos solo cuando hay un cambio
+    // significativo para no saturar la red; en modo forzado siempre.
+    const tiempo = video.currentTime || 0;
+    if (!forzado)
+    {
+      const ultimoReporte = (video as any).__ultimoReporte as { id: number; tiempo: number; ts: number } | undefined;
+      const ahora = performance.now();
+      if (ultimoReporte && ultimoReporte.id === pub.id && Math.abs(ultimoReporte.tiempo - tiempo) < 1.5 && (ahora - ultimoReporte.ts) < 2500)
+      {
+        return;
+      }
+      (video as any).__ultimoReporte = { id: pub.id, tiempo, ts: ahora };
+    }
+
+    this.signalr.reportarEstadoReproduccion(this.tipoPantalla(), pub.id, tiempo).catch(() => undefined);
+  }
+
+  private aplicarEstadoSeguidor(estado: EstadoReproduccionPantalla): void
+  {
+    if (!this.reproduciendo() || this.cola().length === 0) return;
+
+    const pub = this.cola().find((p) => p.id === estado.publicidadId);
+    const video = this.videoRef?.nativeElement;
+    if (!video) return;
+
+    const ahoraUtc = Date.now();
+    const latenciaRed = Math.max(0, ahoraUtc - estado.timestampUtc);
+    const tiempoAjustado = estado.tiempoSegundos + latenciaRed / 1000;
+
+    const actualId = this.actual()?.id;
+    if (!pub || actualId !== pub.id)
+    {
+      // El líder está en otro video: cambiamos inmediatamente.
+      if (pub)
+      {
+        this.actual.set(pub);
+        video.src = pub.urlVideo;
+        video.load();
+      }
+      else
+      {
+        // La publicidad ya no existe localmente; confiamos en el polling
+        // para traer la lista actualizada, no forzamos nada aquí.
+        return;
+      }
+    }
+
+    // Alinear el tiempo de reproducción compensando la latencia de red.
+    const diferencia = Math.abs(video.currentTime - tiempoAjustado);
+    if (diferencia > 0.5)
+    {
+      video.currentTime = tiempoAjustado;
+    }
+
+    const intento = video.play();
+    if (intento && typeof intento.then === 'function')
+    {
+      intento.catch(() => undefined);
+    }
   }
 
   // ============================================================
@@ -503,6 +659,7 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
         .then(() =>
         {
           console.info('[Reproductor] Reproduciendo:', pub.nombrePublicidad, pub.urlVideo);
+          if (this.esLider()) this.reportarEstadoComoLider(true);
         })
         .catch((err) =>
         {
@@ -511,6 +668,10 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
             'El navegador bloqueó la reproducción. Vuelve a pulsar "Iniciar reproducción".'
           );
         });
+    }
+    else if (this.esLider())
+    {
+      this.reportarEstadoComoLider(true);
     }
   }
 
@@ -549,6 +710,9 @@ export class ReproductorPantallaComponent implements OnInit, OnDestroy
       sessionStorage.setItem(`reproductorAuto:${this.tipoPantalla()}`, '1');
     }
     catch { /* sin acciones */ }
+
+    // Notificamos al hub para participar en la sincronización del tipo.
+    this.signalr.iniciarReproduccion(this.tipoPantalla()).catch(() => undefined);
 
     const lista = this.cola();
     if (lista.length === 0)

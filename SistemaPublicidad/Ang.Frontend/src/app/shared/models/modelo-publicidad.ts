@@ -7,7 +7,7 @@ export type SeveridadActividad = 'success' | 'warning' | 'info';
 
 export type EstadoEmpresa = 'Activa' | 'Inactiva';
 
-export type TipoPantallaPublicidad = 'VerticalSamsung' | 'HorizontalDescenso';
+export type TipoPantallaPublicidad = 'Vertical' | 'Horizontal';
 
 // Elemento visible en la barra superior de navegación.
 export interface ElementoNavegacion {

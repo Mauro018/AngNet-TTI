@@ -1,4 +1,4 @@
-export type TipoPantallaPublicidad = 'VerticalSamsung' | 'HorizontalDescenso';
+export type TipoPantallaPublicidad = 'Vertical' | 'Horizontal';
 
 /**
  * Publicidad vigente con la información mínima que necesitan

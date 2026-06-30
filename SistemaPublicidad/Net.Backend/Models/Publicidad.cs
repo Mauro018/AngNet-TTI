@@ -24,7 +24,7 @@ namespace SistemaPublicidad.Net.Backend.Models
 
         [Required]
         [StringLength(50)]
-        public string TipoPantalla { get; set; } = "VerticalSamsung";
+        public string TipoPantalla { get; set; } = "Vertical";
 
         [StringLength(300)]
         public string Descripcion { get; set; } = string.Empty;

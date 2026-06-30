@@ -5,6 +5,13 @@ import * as signalR from '@microsoft/signalr';
 import { API_URL } from './detectar-api';
 import { TipoPantallaPublicidad } from '../shared/models/modelo-publicidad-vigente';
 
+export interface EstadoReproduccionPantalla {
+  tipoPantalla: TipoPantallaPublicidad;
+  publicidadId: number;
+  tiempoSegundos: number;
+  timestampUtc: number;
+}
+
 /**
  * Servicio que mantiene una única conexión SignalR contra el hub
  * `/hubpantallas` del backend. Cualquier componente (reproductor o
@@ -16,6 +23,8 @@ import { TipoPantallaPublicidad } from '../shared/models/modelo-publicidad-vigen
  *    unirse al hub.
  *  - Reenvía cada evento del hub por un Observable tipado.
  *  - Cuando se desconecta, libera los grupos en la reconexión.
+ *  - Coordina líder/seguidor para mantener las pantallas del mismo
+ *    tipo sincronizadas.
  */
 @Injectable({ providedIn: 'root' })
 export class ServicioPantallasSignalR implements OnDestroy
@@ -45,6 +54,15 @@ export class ServicioPantallasSignalR implements OnDestroy
 
   /** Stream de eventos "refrescarVigentes". */
   readonly refrescarVigentes$ = this.evento<string>('refrescarVigentes');
+
+  /** Stream de eventos "estadoReproduccion" para sincronización. */
+  readonly estadoReproduccion$ = this.evento<EstadoReproduccionPantalla>('estadoReproduccion');
+
+  /** Stream de eventos "eresLider" emitido cuando este cliente es elegido líder. */
+  readonly eresLider$ = this.evento<TipoPantallaPublicidad>('eresLider');
+
+  /** Stream de eventos "solicitarEstado" emitido cuando un seguidor pide el estado actual. */
+  readonly solicitarEstado$ = this.evento<TipoPantallaPublicidad>('solicitarEstado');
 
   async ngOnDestroy(): Promise<void>
   {
@@ -112,7 +130,7 @@ export class ServicioPantallasSignalR implements OnDestroy
   }
 
   /** Une la sesión actual al grupo de un tipo de pantalla. */
-  async unirAPantalla(tipoPantalla: TipoPantallaPublicidad): Promise<void>
+  async unirAPantalla(tipoPantalla: TipoPantallaPublicidad, identificador?: string): Promise<void>
   {
     const clave = `RegistrarPantalla:${tipoPantalla}`;
     const prev = this.contadoresListeners.get(clave) ?? 0;
@@ -126,7 +144,8 @@ export class ServicioPantallasSignalR implements OnDestroy
       {
         try
         {
-          await this.conexion.invoke('RegistrarPantalla', tipoPantalla, `${tipoPantalla}_cliente`);
+          const id = identificador?.trim() || `${tipoPantalla}_cliente_${this.generarIdCorto()}`;
+          await this.conexion.invoke('RegistrarPantalla', tipoPantalla, id);
         }
         catch (error)
         {
@@ -150,6 +169,62 @@ export class ServicioPantallasSignalR implements OnDestroy
     else
     {
       this.contadoresListeners.set(clave, prev - 1);
+    }
+  }
+
+  /** El líder envía su estado de reproducción actual al grupo. */
+  async reportarEstadoReproduccion(tipoPantalla: TipoPantallaPublicidad, publicidadId: number, tiempoSegundos: number): Promise<void>
+  {
+    if (!this.conexion || this.conexion.state !== signalR.HubConnectionState.Connected) return;
+    try
+    {
+      await this.conexion.invoke('ReportarEstadoReproduccion', tipoPantalla, publicidadId, tiempoSegundos);
+    }
+    catch (error)
+    {
+      console.warn('No se pudo reportar estado de reproducción', error);
+    }
+  }
+
+  /** Notifica al hub que esta pantalla comenzó a reproducir. */
+  async iniciarReproduccion(tipoPantalla: TipoPantallaPublicidad): Promise<void>
+  {
+    if (!this.conexion || this.conexion.state !== signalR.HubConnectionState.Connected) return;
+    try
+    {
+      await this.conexion.invoke('IniciarReproduccion', tipoPantalla);
+    }
+    catch (error)
+    {
+      console.warn('No se pudo notificar inicio de reproducción', error);
+    }
+  }
+
+  /** Notifica al hub que esta pantalla dejó de reproducir. */
+  async detenerReproduccion(tipoPantalla: TipoPantallaPublicidad): Promise<void>
+  {
+    if (!this.conexion || this.conexion.state !== signalR.HubConnectionState.Connected) return;
+    try
+    {
+      await this.conexion.invoke('DetenerReproduccion', tipoPantalla);
+    }
+    catch (error)
+    {
+      console.warn('No se pudo notificar detención de reproducción', error);
+    }
+  }
+
+  /** Solicita al líder del tipo que envíe su estado actual. */
+  async solicitarEstadoActual(tipoPantalla: TipoPantallaPublicidad): Promise<void>
+  {
+    if (!this.conexion || this.conexion.state !== signalR.HubConnectionState.Connected) return;
+    try
+    {
+      await this.conexion.invoke('SolicitarEstadoActual', tipoPantalla);
+    }
+    catch (error)
+    {
+      console.warn('No se pudo solicitar estado actual', error);
     }
   }
 
@@ -190,5 +265,10 @@ export class ServicioPantallasSignalR implements OnDestroy
       this.conexion = undefined;
       this.estadoConexion.set('cerrado');
     }
+  }
+
+  private generarIdCorto(): string
+  {
+    return Math.random().toString(36).slice(2, 8);
   }
 }

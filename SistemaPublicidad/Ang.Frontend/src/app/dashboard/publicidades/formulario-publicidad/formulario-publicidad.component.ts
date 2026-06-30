@@ -22,8 +22,8 @@ export class FormularioPublicidadComponent implements OnChanges {
   private readonly publicidadService = inject(PublicidadService);
 
   protected readonly tipoPantallaOptions: Array<{ value: TipoPantallaPublicidad; label: string; description: string }> = [
-    { value: 'VerticalSamsung',    label: 'Vertical',   description: 'Formato vertical para piezas apiladas y lectura rÃ¡pida.' },
-    { value: 'HorizontalDescenso', label: 'Horizontal', description: 'Formato panorÃ¡mico para alto impacto visual.' },
+    { value: 'Vertical', label: 'Vertical',   description: 'Formato vertical para piezas apiladas y lectura rÃ¡pida.' },
+    { value: 'Horizontal', label: 'Horizontal', description: 'Formato panorÃ¡mico para alto impacto visual.' },
   ];
 
   protected readonly duracionVideoOptions = [10, 15, 20, 25, 30] as const;
@@ -36,8 +36,8 @@ export class FormularioPublicidadComponent implements OnChanges {
     subtitle: string;
     basePrices: Record<number, number>;
   }> = [
-    { type: 'VerticalSamsung',    title: 'Vertical',   subtitle: 'Tarifa base mensual por duraciÃ³n de video.', basePrices: { 10:120000, 15:140000, 20:160000, 25:180000, 30:200000 } },
-    { type: 'HorizontalDescenso', title: 'Horizontal', subtitle: 'Tarifa base mensual del formato principal.',  basePrices: { 10:150000, 15:170000, 20:190000, 25:210000, 30:230000 } },
+    { type: 'Vertical',    title: 'Vertical',   subtitle: 'Tarifa base mensual por duraciÃ³n de video.', basePrices: { 10:120000, 15:140000, 20:160000, 25:180000, 30:200000 } },
+    { type: 'Horizontal', title: 'Horizontal', subtitle: 'Tarifa base mensual del formato principal.',  basePrices: { 10:150000, 15:170000, 20:190000, 25:210000, 30:230000 } },
   ];
 
   readonly empresas = input<Empresa[]>([]);
@@ -55,7 +55,7 @@ export class FormularioPublicidadComponent implements OnChanges {
   protected readonly form = this.formBuilder.nonNullable.group({
     empresaId:             [0, [Validators.required, Validators.min(1)]],
     nombrePublicidad:      ['', [Validators.required, Validators.minLength(3)]],
-    tipoPantalla:          ['VerticalSamsung' as TipoPantallaPublicidad, [Validators.required]],
+    tipoPantalla:          ['Vertical' as TipoPantallaPublicidad, [Validators.required]],
     duracionVideoSegundos: [10, [Validators.required]],
     duracionMeses:         [1, [Validators.required, Validators.min(1), Validators.max(12)]],
     fechaInicio:           [this.getTodayValue(), [Validators.required]],
@@ -162,7 +162,7 @@ export class FormularioPublicidadComponent implements OnChanges {
     this.form.controls.tipoPantalla.enable();
     this.form.controls.duracionVideoSegundos.enable();
     this.form.reset({
-      empresaId: 0, nombrePublicidad: '', tipoPantalla: 'VerticalSamsung',
+      empresaId: 0, nombrePublicidad: '', tipoPantalla: 'Vertical',
       duracionVideoSegundos: 10, duracionMeses: 1,
       fechaInicio: this.getTodayValue(), fechaFin: '', observaciones: '',
     });

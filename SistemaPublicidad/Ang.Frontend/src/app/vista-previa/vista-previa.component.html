@@ -9,16 +9,16 @@
         <button
           type="button"
           role="tab"
-          [class.activo]="tipoSeleccionado() === 'VerticalSamsung'"
-          (click)="seleccionarTipo('VerticalSamsung')"
+          [class.activo]="tipoSeleccionado() === 'Vertical'"
+          (click)="seleccionarTipo('Vertical')"
         >
           Vertical
         </button>
         <button
           type="button"
           role="tab"
-          [class.activo]="tipoSeleccionado() === 'HorizontalDescenso'"
-          (click)="seleccionarTipo('HorizontalDescenso')"
+          [class.activo]="tipoSeleccionado() === 'Horizontal'"
+          (click)="seleccionarTipo('Horizontal')"
         >
           Horizontal
         </button>
@@ -37,7 +37,7 @@
     </div>
   </header>
 
-  <div class="vista-previa__cuerpo" [class.vista-previa__cuerpo--horizontal]="tipoSeleccionado() === 'HorizontalDescenso'">
+  <div class="vista-previa__cuerpo" [class.vista-previa__cuerpo--horizontal]="tipoSeleccionado() === 'Horizontal'">
     <div class="vista-previa__reproductor">
       <ng-container *ngIf="actual() as pub; else vacio">
         <video
