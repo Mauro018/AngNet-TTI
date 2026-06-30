@@ -46,36 +46,22 @@
             </header>
 
             <div class="contenedor-barras">
-              <div class="grafica-barras" aria-label="Gráfica de barras de publicidades">
-                <div class="grafica-barras__eje-y">
-                  <span>{{ escalaBarrasPublicidades.maximo }}</span>
-                  <span>{{ escalaBarrasPublicidades.medio }}</span>
-                  <span>0</span>
-                </div>
-
-                <div class="grafica-barras__area">
-                  <div class="grafica-barras__lineas-horizontales">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </div>
-
-                  <div class="grafica-barras__columnas">
-                    @for (barra of barrasPublicidades; track barra.etiqueta) {
-                      <div class="grafica-barras__columna" [class.grafica-barras__columna--cero]="barra.cantidad === 0">
-                        <div class="grafica-barras__barra-wrapper">
-                          <div
-                            class="grafica-barras__barra"
-                            [style.height.%]="barra.altura"
-                            [style.background-color]="barra.color">
-                            </div>
-                        </div>
-                        <span class="grafica-barras__cantidad" [style.color]="barra.color">{{ barra.cantidad }}</span>
-                        <span class="grafica-barras__etiqueta">{{ barra.etiqueta }}</span>
-                        <span class="grafica-barras__porcentaje">{{ barra.porcentaje }}%</span>
+              <div class="grafica-barras grafica-barras--sin-eje" aria-label="Gráfica de barras de publicidades">
+                <div class="grafica-barras__columnas">
+                  @for (barra of barrasPublicidades; track barra.etiqueta) {
+                    <div class="grafica-barras__columna" [class.grafica-barras__columna--cero]="barra.cantidad === 0">
+                      <div class="grafica-barras__barra-wrapper">
+                        <div
+                          class="grafica-barras__barra"
+                          [style.height.%]="barra.altura"
+                          [style.background-color]="barra.color">
+                          </div>
                       </div>
-                    }
-                  </div>
+                      <span class="grafica-barras__cantidad" [style.color]="barra.color">{{ barra.cantidad }}</span>
+                      <span class="grafica-barras__etiqueta">{{ barra.etiqueta }}</span>
+                      <span class="grafica-barras__porcentaje">{{ barra.porcentaje }}%</span>
+                    </div>
+                  }
                 </div>
               </div>
             </div>

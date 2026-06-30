@@ -245,52 +245,15 @@
 }
 
 .grafica-barras {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
   flex: 1 1 auto;
   min-height: 0;
   height: 100%;
 }
 
-.grafica-barras__eje-y {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: flex-end;
-  padding-right: 0.5rem;
-  font-size: 0.75rem;
-  color: var(--muted);
-  min-height: 0;
-}
-
-.grafica-barras__area {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  height: 100%;
-}
-
-.grafica-barras__lineas-horizontales {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.grafica-barras__lineas-horizontales span {
-  display: block;
-  width: 100%;
-  border-top: 1px dashed var(--border);
-}
-
 .grafica-barras__columnas {
-  position: relative;
-  z-index: 1;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   align-items: end;
