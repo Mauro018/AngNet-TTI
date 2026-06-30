@@ -18,30 +18,44 @@ public class EmpresasController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<Empresa>>> GetEmpresas()
     {
-        // Desactivar automáticamente las empresas activas cuyas publicidades hayan vencido en su totalidad.
-        // Se compara contra la fecha actual en zona horaria local (Colombia, UTC-5) para que
-        // el corte del día coincida con el calendario del usuario.
+        // Desactivar automáticamente las empresas activas cuyas publicidades
+        // hayan vencido en su totalidad (todas sus publicidades con FechaFin < hoy).
+        // Se compara contra la fecha actual en zona horaria local (Colombia, UTC-5)
+        // para que el corte del día coincida con el calendario del usuario.
         var hoy = DateTime.UtcNow.Date;
+        var hace30Dias = hoy.AddDays(-30);
 
-        // Traemos todas las empresas y filtramos en memoria para no romper con el
-        // tipo de timestamp de Npgsql (la consulta previa con DateTime.UtcNow.Date
-        // podía generar "Unable to write data to the transport connection" si la
-        // base de datos no estaba disponible transitoriamente).
         var empresas = await _context.Empresas
             .OrderBy(e => e.Id)
             .ToListAsync();
 
         if (empresas.Count > 0)
         {
-            var empresasConVencidas = await _context.Publicidades
-                .Where(p => p.FechaFin.Date < hoy)
-                .GroupBy(p => p.EmpresaId)
-                .Select(g => new { g.Key })
+            // Traemos solo los datos mínimos necesarios y agrupamos en memoria
+            // para evitar consultas pesadas que puedan fallar con la conexión intermitente.
+            var publicidades = await _context.Publicidades
+                .Select(p => new { p.EmpresaId, p.FechaFin })
                 .ToListAsync();
 
-            var idsVencidas = new HashSet<int>(empresasConVencidas.Select(x => x.Key));
+            var publicidadesPorEmpresa = publicidades
+                .GroupBy(p => p.EmpresaId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
             var empresasADesactivar = empresas
-                .Where(e => e.Activo && idsVencidas.Contains(e.Id))
+                .Where(e => e.Activo)
+                .Where(e =>
+                {
+                    if (!publicidadesPorEmpresa.TryGetValue(e.Id, out var pubs)) return false;
+                    var todasVencidas = pubs.All(p => p.FechaFin.Date < hoy);
+                    if (!todasVencidas) return false;
+
+                    // Si la empresa fue activada manualmente en los últimos 30 días,
+                    // le damos un margen para que el usuario pueda registrar una nueva publicidad.
+                    if (e.FechaActivacionManual.HasValue && e.FechaActivacionManual.Value.Date >= hace30Dias.Date)
+                        return false;
+
+                    return true;
+                })
                 .ToList();
 
             if (empresasADesactivar.Count > 0)
@@ -122,6 +136,27 @@ public class EmpresasController : ControllerBase
         var empresa = await _context.Empresas.FindAsync(id);
         if (empresa == null)
             return NotFound();
+
+        // No permitir desactivar manualmente una empresa que tenga publicidades vigentes.
+        var hoy = DateTime.UtcNow.Date;
+        if (datos.Activo == false && empresa.Activo)
+        {
+            var tieneVigentes = await _context.Publicidades.AnyAsync(p =>
+                p.EmpresaId == id && p.FechaFin.Date >= hoy);
+            if (tieneVigentes)
+            {
+                return Conflict(new { mensaje = "No se puede desactivar la empresa porque tiene publicidades vigentes." });
+            }
+
+            // Al desactivar manualmente se limpia el margen de activación manual.
+            empresa.FechaActivacionManual = null;
+        }
+        else if (datos.Activo && !empresa.Activo)
+        {
+            // Registrar la activación manual para dar 30 días de margen
+            // antes de una posible desactivación automática por vencimiento.
+            empresa.FechaActivacionManual = DateTime.UtcNow;
+        }
 
         empresa.Representante = datos.Representante.Trim();
         empresa.Cedula        = datos.Cedula.Trim();

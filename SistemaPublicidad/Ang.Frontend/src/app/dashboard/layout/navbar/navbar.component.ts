@@ -82,11 +82,4 @@ export class Navbar implements OnInit, OnDestroy {
   selectSection(sectionId: string): void {
     this.sectionSelected.emit(sectionId);
   }
-
-  // Devuelve la clase CSS que pinta la alerta de la pestaña Publicidades.
-  getAlertClass(alert?: 'warning' | 'danger'): string {
-    if (alert === 'danger') return 'navbar__alert--danger';
-    if (alert === 'warning') return 'navbar__alert--warning';
-    return '';
-  }
 }

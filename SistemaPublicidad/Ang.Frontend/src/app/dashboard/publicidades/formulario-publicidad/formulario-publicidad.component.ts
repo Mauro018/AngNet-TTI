@@ -65,6 +65,19 @@ export class FormularioPublicidadComponent implements OnChanges {
 
   get modoEdicion(): boolean { return this.publicidadEditando !== null; }
 
+  /** Empresas disponibles en el selector. En alta solo se muestran las activas;
+   *  en edición se conserva la empresa de la publicidad aunque esté inactiva. */
+  protected get empresasParaSelector(): Empresa[] {
+    const activas = this.empresas().filter((empresa) => empresa.estado === 'Activa');
+    const editando = this.publicidadEditando;
+    if (!editando) return activas;
+
+    const empresaActual = this.empresas().find((empresa) => empresa.id === editando.empresaId);
+    if (!empresaActual || empresaActual.estado === 'Activa') return activas;
+
+    return [...activas, empresaActual].sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['publicidadEditando']) {
       const p = this.publicidadEditando;

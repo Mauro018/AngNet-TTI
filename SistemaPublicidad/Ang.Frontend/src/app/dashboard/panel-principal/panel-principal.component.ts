@@ -400,11 +400,14 @@ export class PanelPrincipalComponent implements OnInit, OnDestroy {
   }
 
   // Devuelve un estado global para la pestaña de publicidades.
-  // Si existe una publicidad en rojo, la pestaña completa pasa a rojo.
-  // Si no, pero sí hay alguna próxima a vencer, se muestra en amarillo.
+  // Solo se consideran publicidades activas (no vencidas).
+  // Si existe una publicidad activa con menos de 3 días por vencer, la pestaña pasa a rojo.
+  // Si no, pero sí hay alguna próxima a vencer (menos de 7 días), se muestra en amarillo.
   private calcularAlertaPublicidad(): 'warning' | 'danger' | undefined {
-    const tienePeligro = this.publicidadesRegistradas().some((record) => this.calcularDiasRestantes(record.fechaFin) < 3);
-    const tieneAdvertencia = this.publicidadesRegistradas().some((record) => {
+    const publicidadesActivas = this.publicidadesRegistradas().filter((record) => this.calcularDiasRestantes(record.fechaFin) >= 0);
+
+    const tienePeligro = publicidadesActivas.some((record) => this.calcularDiasRestantes(record.fechaFin) < 3);
+    const tieneAdvertencia = publicidadesActivas.some((record) => {
       const diasRestantes = this.calcularDiasRestantes(record.fechaFin);
       return diasRestantes >= 3 && diasRestantes < 7;
     });
@@ -468,6 +471,16 @@ export class PanelPrincipalComponent implements OnInit, OnDestroy {
     ];
   }
 
+  private desplazarAlFormulario(nombreFormulario: 'empresaForm' | 'publicidadForm'): void {
+    setTimeout(() => {
+      const selector = nombreFormulario === 'empresaForm' ? 'app-formulario-empresa' : 'app-formulario-publicidad';
+      const elemento = document.querySelector(selector);
+      if (elemento) {
+        elemento.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 0);
+  }
+
   private cargarEmpresas(): void {
     this.empresaService.getEmpresas().subscribe({
       next: (empresas) => {
@@ -517,6 +530,7 @@ export class PanelPrincipalComponent implements OnInit, OnDestroy {
   protected iniciarEdicion(empresa: Empresa): void {
     this.empresaEditando.set(empresa);
     this.empresaErrorMessage.set('');
+    this.desplazarAlFormulario('empresaForm');
   }
 
   protected guardarEdicionEmpresa(event: { id: number; datos: Omit<Empresa, 'id'> }, formulario: FormularioEmpresaComponent): void {
@@ -564,6 +578,7 @@ export class PanelPrincipalComponent implements OnInit, OnDestroy {
   protected iniciarEdicionPublicidad(publicidad: Publicidad): void {
     this.publicidadEditando.set(publicidad);
     this.publicidadErrorMessage.set('');
+    this.desplazarAlFormulario('publicidadForm');
   }
 
   protected guardarEdicionPublicidad(
@@ -622,12 +637,13 @@ export class PanelPrincipalComponent implements OnInit, OnDestroy {
     return this.publicidadesRegistradas().filter((record) => this.calcularDiasRestantes(record.fechaFin) < 0);
   }
 
-  // Calcula cuántos días faltan para el vencimiento.
-  // Se usa tanto para la alerta del menú como para el estado visual de cada publicidad.
   private calcularDiasRestantes(fechaFin: string): number {
     const hoy = this.normalizarFechaHoy();
     const fin = new Date(`${fechaFin}T23:59:59`);
-    return Math.ceil((fin.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+    // Normalizamos la fecha de fin a medianoche local para evitar que la hora del día
+    // actual desplace el cálculo en días completos.
+    const finLocal = new Date(fin.getFullYear(), fin.getMonth(), fin.getDate());
+    return Math.ceil((finLocal.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
   }
 
   /** Normaliza la fecha de hoy a medianoche local para comparaciones consistentes. */

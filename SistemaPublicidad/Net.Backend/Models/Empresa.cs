@@ -48,6 +48,11 @@ namespace SistemaPublicidad.Net.Backend.Models
 
         public bool Activo { get; set; } = true;
 
+        // Fecha en que un administrador activó la empresa manualmente.
+        // Se usa para dar un margen de 30 días antes de volver a desactivarla
+        // automáticamente por falta de publicidades vigentes.
+        public DateTime? FechaActivacionManual { get; set; }
+
         public DateTime FechaCreacion { get; set; } = DateTime.UtcNow;
 
         //Relación con las publicidades

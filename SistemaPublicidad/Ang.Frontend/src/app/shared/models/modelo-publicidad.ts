@@ -54,6 +54,9 @@ export interface Empresa {
   correo: string;
   estado: EstadoEmpresa;
   fechaRegistro: string;
+  // Fecha en que un administrador activó la empresa manualmente.
+  // Útil para dar un margen antes de la desactivación automática.
+  fechaActivacionManual?: string;
 }
 
 // Registro de una publicidad asociada a una empresa específica.

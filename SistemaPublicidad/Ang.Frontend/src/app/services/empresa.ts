@@ -15,6 +15,7 @@ interface EmpresaApi {
   email: string;
   activo: boolean;
   fechaCreacion: string;
+  fechaActivacionManual: string | null;
 }
 
 @Injectable({
@@ -56,6 +57,7 @@ export class EmpresaService {
       correo: empresa.email,
       estado: empresa.activo ? 'Activa' : 'Inactiva',
       fechaRegistro: new Date(empresa.fechaCreacion).toISOString().slice(0, 10),
+      fechaActivacionManual: empresa.fechaActivacionManual ?? undefined,
     };
   }
 
@@ -70,6 +72,7 @@ export class EmpresaService {
       email: empresa.correo.trim(),
       activo: empresa.estado === 'Activa',
       fechaCreacion: new Date().toISOString(),
+      fechaActivacionManual: empresa.fechaActivacionManual ?? null,
     };
   }
 }

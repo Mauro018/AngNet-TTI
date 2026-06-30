@@ -43,6 +43,9 @@ namespace Net.Backend.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
+                    b.Property<DateTime?>("FechaActivacionManual")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<DateTime>("FechaCreacion")
                         .HasColumnType("timestamp without time zone");
 

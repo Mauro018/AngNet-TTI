@@ -160,6 +160,52 @@
   box-shadow: 0 0 6px color-mix(in srgb, var(--danger) 55%, transparent);
 }
 
+/* Parpadeo amarillo intenso del botón Publicidades cuando hay publicidades próximas a vencer. */
+@keyframes parpadeo-advertencia-boton {
+  0%, 100% {
+    background: var(--warning);
+    border-color: var(--warning);
+    color: #1a1a00;
+    box-shadow: 0 0 0 transparent;
+    transform: scale(1);
+  }
+  50% {
+    background: #fff3cd;
+    border-color: #ffca2c;
+    color: #5c4800;
+    box-shadow: 0 0 22px color-mix(in srgb, var(--warning) 80%, transparent);
+    transform: scale(1.03);
+  }
+}
+
+.navbar__button--advertencia {
+  animation: parpadeo-advertencia-boton 0.7s ease-in-out infinite;
+  font-weight: 700;
+}
+
+/* Cuando el botón está activo, el parpadeo usa colores sólidos para seguir siendo visible. */
+@keyframes parpadeo-advertencia-boton-activo {
+  0%, 100% {
+    background: var(--warning);
+    border-color: var(--warning);
+    color: #1a1a00;
+    box-shadow: 0 0 0 transparent;
+    transform: scale(1);
+  }
+  50% {
+    background: #fff3cd;
+    border-color: #ffca2c;
+    color: #5c4800;
+    box-shadow: 0 0 22px color-mix(in srgb, var(--warning) 80%, transparent);
+    transform: scale(1.03);
+  }
+}
+
+.navbar__button--active.navbar__button--advertencia {
+  animation: parpadeo-advertencia-boton-activo 0.7s ease-in-out infinite;
+  font-weight: 700;
+}
+
 .navbar__legend {
   flex: 1;
   min-width: 300px;

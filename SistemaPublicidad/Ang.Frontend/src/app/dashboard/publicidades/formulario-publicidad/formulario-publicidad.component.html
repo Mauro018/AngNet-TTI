@@ -12,7 +12,7 @@
         <label for="empresaId">Empresa *</label>
         <select id="empresaId" formControlName="empresaId" [class.form-group__input--error]="isInvalid('empresaId')">
           <option [ngValue]="0" disabled>Selecciona una empresa</option>
-          @for (company of empresas(); track company.id) {
+          @for (company of empresasParaSelector; track company.id) {
             <option [ngValue]="company.id">{{ company.nombre }}</option>
           }
         </select>
