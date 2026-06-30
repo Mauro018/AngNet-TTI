@@ -64,15 +64,16 @@ export class VistaPreviaEnVivoComponent implements OnInit, OnDestroy
   private readonly subscripciones = new Subscription();
 
   /**
-   * Hash de la última versión consultada al backend (vía endpoint
-   * liviano). Se compara cada 5s para detectar cambios aunque SignalR
+   * Hash de la última versión consultada al backend, por tipo de
+   * pantalla. Se compara cada 5s para detectar cambios aunque SignalR
    * no haya llegado o esté fallando.
    */
-  private hashUltimaVersion = '';
+  private readonly hashUltimaVersion: Record<TipoPantallaPublicidad, string> = {
+    Vertical: '',
+    Horizontal: '',
+  };
   /** Timer del polling de respaldo (cada 5s). */
   private intervaloPolling?: number;
-  /** Evita lanzar varias recargas simultáneas. */
-  private recargando = false;
 
   // afterNextRender debe invocarse en injection context (constructor o
   // field initializer). Lo registramos como field initializer para que
@@ -228,14 +229,15 @@ export class VistaPreviaEnVivoComponent implements OnInit, OnDestroy
   }
 
   // ============================================================
-  // Polling de respaldo (cada 5s) → recarga si cambia el hash
+  // Polling de respaldo (cada 5s) → refresca en caliente si cambia el hash
   // ============================================================
 
   /**
    * Polling independiente de SignalR. Cada 5s consulta al endpoint
    * liviano `version-vigentes`. Si el hash difiere del último conocido
-   * significa que la lista cambió (alta, baja, video reemplazado,
-   * fechas editadas) y recarga la página automáticamente.
+   * para ese tipo de pantalla, significa que la lista cambió (alta, baja,
+   * video reemplazado, fechas editadas) y se vuelve a cargar la lista de
+   * vigentes en caliente, sin recargar la página.
    */
   private iniciarPollingVersion(): void
   {
@@ -251,7 +253,6 @@ export class VistaPreviaEnVivoComponent implements OnInit, OnDestroy
 
   private consultarVersion(): void
   {
-    if (this.recargando) return;
     this.servicioVigentes.obtenerVersionVigentes(this.tipoSeleccionado()).subscribe({
       next: (version) =>
       {
@@ -273,44 +274,25 @@ export class VistaPreviaEnVivoComponent implements OnInit, OnDestroy
   }
 
   /**
-   * Compara el hash devuelto por el backend contra el último conocido.
-   * Si difiere, recarga la página.
+   * Compara el hash devuelto por el backend contra el último conocido
+   * para el mismo tipo de pantalla. Si difiere, refresca la lista de
+   * publicidades vigentes en caliente sin recargar la página.
    */
   private detectarCambiosVersion(version: VersionVigentes): void
   {
-    if (this.hashUltimaVersion && this.hashUltimaVersion !== version.hash)
+    const tipo = version.tipoPantalla as TipoPantallaPublicidad;
+    const hashAnterior = this.hashUltimaVersion[tipo];
+
+    if (hashAnterior && hashAnterior !== version.hash)
     {
-      console.info('[VistaPrevia] Cambio de versión detectado → recargando.', { total: version.total });
-      this.programarRecarga();
+      console.info('[VistaPrevia] Cambio de versión detectado → refrescando en caliente.', { total: version.total });
+      this.cargar();
     }
     else
     {
       console.info('[VistaPrevia] Sin cambios en la versión de publicidades.');
     }
-    this.hashUltimaVersion = version.hash;
-  }
 
-  /** Programa una recarga con un pequeño retardo. */
-  private programarRecarga(): void
-  {
-    if (!isPlatformBrowser(this.platformId)) return;
-    if (this.recargando) return;
-    this.recargando = true;
-    console.info('[VistaPrevia] Programando recarga forzada de la página en 800ms...');
-    setTimeout(() =>
-    {
-      try
-      {
-        // Recarga evitando caché del navegador.
-        const url = new URL(window.location.href);
-        url.searchParams.set('_t', Date.now().toString());
-        window.location.replace(url.toString());
-      }
-      catch (error)
-      {
-        console.error('[VistaPrevia] No se pudo recargar la página:', error);
-        this.recargando = false;
-      }
-    }, 800);
+    this.hashUltimaVersion[tipo] = version.hash;
   }
 }
